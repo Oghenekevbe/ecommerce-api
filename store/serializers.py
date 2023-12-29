@@ -66,7 +66,7 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['id', 'user', 'billing_address', 'date_ordered', 'complete', 'transaction_id', 'cart_items']
+        fields = ['user', 'billing_address', 'date_ordered', 'complete', 'transaction_id', 'cart_items']
 
 class CartTotalSerializer(serializers.Serializer):
     cart_total = serializers.DecimalField(max_digits=10, decimal_places=2)

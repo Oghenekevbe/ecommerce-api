@@ -1,4 +1,6 @@
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status,generics, permissions
 from rest_framework.views import APIView
@@ -441,3 +443,24 @@ class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+
+
+
+
+
+class CartView(APIView):
+    '''
+    @swagger_auto_schema(
+        methods=['GET'],
+        responses={
+            200: openapi.Response('Cart details', CartSerializer),
+            404: 'Cart not found',
+        },
+        tags=['Cart'],
+    )
+    '''
+    pass
+class AddToCartView(APIView):
+   pass
