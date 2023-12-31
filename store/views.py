@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
+from django.contrib.auth import get_user_model
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status,generics, permissions
@@ -452,15 +453,37 @@ class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 class CartView(APIView):
     '''
-    @swagger_auto_schema(
+
         methods=['GET'],
         responses={
             200: openapi.Response('Cart details', CartSerializer),
             404: 'Cart not found',
-        },
-        tags=['Cart'],
-    )
+        }
     '''
-    pass
+    permission_classes = [IsAuthenticated]
+    serializer_class = CartSerializer
+
+    def get(self, request):
+        user = request.user
+        cart, created = Cart.objects.get_or_create(user=user, complete=False)
+        serializer = self.serializer_class(cart)
+        return Response(data= serializer.data, status=status.HTTP_200_OK )
+    
+    def put(self,request):
+        user = request.user
+        cart = get_object_or_404(Cart, user=user)
+        serializer= self.serializer_class(cart, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status= status.HTTP_202_ACCEPTED)
+        else:
+            return Response(serializer.errors, status= status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
 class AddToCartView(APIView):
    pass

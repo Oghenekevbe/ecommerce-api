@@ -47,7 +47,7 @@ class SellerSerializer(serializers.ModelSerializer):
 class BillingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingAddress
-        fields = ['id', 'customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_no_billing_address']
+        fields = ['id', 'customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address']
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField()
@@ -60,13 +60,11 @@ class CartItemSerializer(serializers.ModelSerializer):
         return obj.product.name
 
 class CartSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-    billing_address = BillingAddressSerializer()
     cart_items = CartItemSerializer(many=True)
 
     class Meta:
         model = Cart
-        fields = ['user', 'billing_address', 'date_ordered', 'complete', 'transaction_id', 'cart_items']
+        fields = ['user', 'address', 'date_ordered', 'complete', 'order_number', 'cart_items']
 
 class CartTotalSerializer(serializers.Serializer):
     cart_total = serializers.DecimalField(max_digits=10, decimal_places=2)

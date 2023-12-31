@@ -29,12 +29,12 @@ class SellerAdmin(admin.ModelAdmin):
 
 @admin.register(BillingAddress)
 class BillingAddressAdmin(admin.ModelAdmin):
-    list_display = ('customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_no_billing_address')
-    ordering = ('is_no_billing_address', 'id')
+    list_display = ('customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address')
+    ordering = ('is_billing_address', 'id')
 
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
-    list_display = ('user', 'address', 'date_ordered', 'complete', 'transaction_id', 'cart_total', 'cart_item_count')
+    list_display = ('user', 'address', 'date_ordered', 'complete', 'order_number', 'cart_total', 'cart_item_count')
     ordering = ('date_ordered',)
 
 @admin.register(CartItem)

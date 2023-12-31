@@ -100,39 +100,41 @@ class BillingAddress(models.Model):
     state = models.CharField(max_length=225, null=True, blank=True)
     zipcode = models.CharField(max_length=225, null=True, blank=True)
     date_added = models.DateTimeField(auto_now_add=True)
-    is_no_billing_address = models.BooleanField(default=False)
+    is_billing_address = models.BooleanField(default=False)
 
     
-    def __str__(self):
-        if self.is_no_billing_address:
-            return "No Billing Address"
-        elif self.customer is not None and self.customer.user is not None:
-            return str(self.customer.user) + ' - ' + self.address
-        else:
-            return str(self.address)
+def __str__(self):
+    if self.is_no_billing_address:
+        return "No Billing Address"
+    elif self.customer and hasattr(self.customer, 'user') and self.customer.user.username:
+        return f"{self.customer.user} - {self.address}"
+    else:
+        return str(self.address)
 
-    class Meta:
-        ordering = ('is_no_billing_address', 'id')
+class Meta:
+        ordering = ('is_billing_address', 'id')
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    address = models.ForeignKey(BillingAddress, related_name='billing_address', on_delete=models.CASCADE)
+    address = models.ForeignKey(BillingAddress, related_name='billing_address', on_delete=models.CASCADE,null=True)
     date_ordered = models.DateTimeField(auto_now_add=True)
     complete = models.BooleanField(default=False, null=True, blank=False)
-    transaction_id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)    
+    order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)    
     def __str__(self):
-        return str(self.user.username) + ' - ' + str(self.transaction_id)
+        return str(self.user.username) + ' - ' + str(self.order_number)
     
     @property
     def cart_total(self):
+        print('checking cart total')
         cart_items = self.cart_items.all()
+        print('cart items: ', cart_items)
         total = sum([item.get_total() for item in cart_items])
+        print(total)
         return total
 
     @property
     def cart_item_count(self):
-        total_items =[item for item in self.cart_items.all()].count()
-        return total_items
+        return self.cart_items.count()
 
 
 class CartItem(models.Model):
@@ -149,9 +151,12 @@ class CartItem(models.Model):
         
     @property
     def get_total(self):
-        total = (self.quantity * self.product.price) - self.product.discounted_price
-        return total 
-
+        if self.product.discounted_price is not None:
+            total = (self.quantity * self.product.discounted_price)
+            return total 
+        else:
+            total = (self.quantity * self.product.price)
+            return total 
     
 
 
