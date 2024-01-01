@@ -58,14 +58,18 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     def get_product_name(self, obj):
         return obj.product.name
+    
+
+
+
+
 
 class CartSerializer(serializers.ModelSerializer):
     cart_items = CartItemSerializer(many=True)
 
     class Meta:
         model = Cart
-        fields = ['user', 'address', 'date_ordered', 'complete', 'order_number', 'cart_items']
+        fields = ['user', 'address', 'date_ordered', 'complete', 'order_number', 'cart_items', 'cart_total']
+        read_only_fields = ['user',  'date_ordered',  'order_number', 'cart_items', 'cart_total']
 
-class CartTotalSerializer(serializers.Serializer):
-    cart_total = serializers.DecimalField(max_digits=10, decimal_places=2)
 

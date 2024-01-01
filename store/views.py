@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import Product, Category, Review,BillingAddress,Cart,CartItem,Seller
-from .serializers import ProductSerializer, ReviewSerializer, CategorySerializer,SellerSerializer,BillingAddressSerializer,CartItemSerializer,CartSerializer,CartTotalSerializer
+from .serializers import ProductSerializer, ReviewSerializer, CategorySerializer,SellerSerializer,BillingAddressSerializer,CartItemSerializer,CartSerializer
 
 class ProductCreateView(APIView):
     serializer_class = ProductSerializer
@@ -452,27 +452,47 @@ class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CartView(APIView):
-    '''
 
-        methods=['GET'],
+    permission_classes = [IsAuthenticated]
+    serializer_class = CartSerializer
+
+    @swagger_auto_schema(
         responses={
             200: openapi.Response('Cart details', CartSerializer),
             404: 'Cart not found',
-        }
-    '''
-    permission_classes = [IsAuthenticated]
-    serializer_class = CartSerializer
+        },
+        tags=['Cart']
+    )
+
+    
 
     def get(self, request):
         user = request.user
         cart, created = Cart.objects.get_or_create(user=user, complete=False)
         serializer = self.serializer_class(cart)
+
         return Response(data= serializer.data, status=status.HTTP_200_OK )
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'key': openapi.Schema(type=openapi.TYPE_STRING),
+                'value': openapi.Schema(type=openapi.TYPE_STRING),
+        
+            }
+        ),
+        responses={
+            202: openapi.Response('Cart updated successfully', CartSerializer),
+            400: 'Invalid input data',
+        },
+        tags=['Cart']
+    )
     
     def put(self,request):
         user = request.user
         cart = get_object_or_404(Cart, user=user)
-        serializer= self.serializer_class(cart, data=request.data)
+        serializer= self.serializer_class(cart, data=request.data, partial = True)
         if serializer.is_valid():
             serializer.save()
             return Response(data=serializer.data, status= status.HTTP_202_ACCEPTED)

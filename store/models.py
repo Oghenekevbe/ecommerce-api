@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from user.models import User
 import uuid
@@ -17,7 +18,7 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     category = models.ForeignKey('Category', on_delete=models.CASCADE)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
     is_available = models.BooleanField(default=True)
     discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
@@ -42,7 +43,8 @@ class Product(models.Model):
         Calculate the discounted price based on the discount percentage.
         """
         discount_factor = 1 - (self.discount_percentage / 100)
-        discounted_price = self.price * discount_factor
+        discounted_price = Decimal(self.price) * Decimal(discount_factor)
+        discounted_price = discounted_price.quantize(Decimal('0.00'))
         return discounted_price
     
     @property
@@ -125,11 +127,8 @@ class Cart(models.Model):
     
     @property
     def cart_total(self):
-        print('checking cart total')
         cart_items = self.cart_items.all()
-        print('cart items: ', cart_items)
-        total = sum([item.get_total() for item in cart_items])
-        print(total)
+        total = sum([item.get_total for item in cart_items])
         return total
 
     @property
