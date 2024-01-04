@@ -8,22 +8,20 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ('id', 'product', 'user', 'rating', 'comment', 'created_at')
 
 class ProductSerializer(serializers.ModelSerializer):
-    discounted_price = serializers.SerializerMethodField()
+    discounted_price = serializers.ReadOnlyField()
     reviews = ReviewSerializer(many=True, read_only=True)  # Include reviews in the serialized output
-    stock_status = serializers.SerializerMethodField()
+    stock_status = serializers.ReadOnlyField()
+    sellers = serializers.StringRelatedField(many=True, source='product.seller.all', read_only=True)
 
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = [
+            'id', 'user', 'name','category', 'description',  'price', 'discount_percentage','discounted_price','image',
+            'is_available',  'created_at', 'updated_at',
+            'sku',
+             'stock_status', 'manufacturer', 'stock_quantity', 'restock_threshold', 'sellers', 'reviews'
+        ]
  
-    def get_discounted_price(self, obj):
-        discount_factor = 1 - (obj.discount_percentage/100)
-        discounted_price = obj.price * discount_factor
-        return round(discounted_price, 2)
-    
-    def get_stock_status(self, obj):
-        return obj.stock_status
-    
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -50,14 +48,25 @@ class BillingAddressSerializer(serializers.ModelSerializer):
         fields = ['id', 'customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address']
 
 class CartItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.SerializerMethodField()
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='product.id'
+    )
+    quantity = serializers.IntegerField()
+    price = serializers.ReadOnlyField(source='product.price')
+    discounted_price = serializers.ReadOnlyField(source='product.discounted_price')
+    get_total = serializers.ReadOnlyField()
+
+
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'order', 'quantity', 'date_ordered', 'product_name']
+        fields = ['id', 'product_id', 'order',  'date_ordered','quantity', 'price', 'discounted_price', 'get_total']
 
-    def get_product_name(self, obj):
-        return obj.product.name
+    def update(self, instance, validated_data):
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.save()
+        return instance
+
     
 
 

@@ -3,7 +3,7 @@ from . import views
 from .views import (
     ProductCreateView, ProductListView, ProductDetailView, ProductUpdateView, ProductDeleteView,
     CategoryCreateView, CategoryListView, CategoryDetailView, CategoryUpdateView, CategoryDeleteView,
-    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView, CartView, AddToCartView
+    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView, CartView, AddToCartView,UpdateCartItem,DeleteCartItem
 )
 
 
@@ -36,4 +36,6 @@ urlpatterns = [
     # CART ENDPOINTS
     path('api/cart/', CartView.as_view(), name='cart-view'),
     path('api/add_to_cart/', AddToCartView.as_view(), name='add-to-cart'),
+    path('api/update_cart_item/<str:pk>/', UpdateCartItem.as_view(), name='update_cart_item'),
+    path('api/delete_cart_item/<str:pk>/', DeleteCartItem.as_view(), name='delete_cart_item'),
 ]

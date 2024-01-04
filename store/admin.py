@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category,Seller, BillingAddress, Cart, CartItem
+from .models import Product, Category,Seller, BillingAddress, Cart, CartItem, Review
 
 # Register your models here.
 
@@ -30,7 +30,7 @@ class SellerAdmin(admin.ModelAdmin):
 @admin.register(BillingAddress)
 class BillingAddressAdmin(admin.ModelAdmin):
     list_display = ('customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address')
-    ordering = ('is_billing_address', 'id')
+    ordering = ('customer',)
 
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
@@ -41,3 +41,8 @@ class CartAdmin(admin.ModelAdmin):
 class CartItemAdmin(admin.ModelAdmin):
     list_display = ('product', 'order', 'quantity', 'date_ordered', 'get_total')
 
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('product', 'user', 'rating', 'comment', 'created_at')
+    list_filter = ('product', 'user', 'created_at')
+    search_fields = ('product__name', 'user__username', 'comment')

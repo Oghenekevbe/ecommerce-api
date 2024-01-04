@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.core.validators import MaxValueValidator
 from django.db import models
 from user.models import User
 import uuid
@@ -21,7 +22,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
     is_available = models.BooleanField(default=True)
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -42,10 +43,14 @@ class Product(models.Model):
         """
         Calculate the discounted price based on the discount percentage.
         """
+        if self.discount_percentage == 0:
+            return None
+        
         discount_factor = 1 - (self.discount_percentage / 100)
         discounted_price = Decimal(self.price) * Decimal(discount_factor)
         discounted_price = discounted_price.quantize(Decimal('0.00'))
         return discounted_price
+
     
     @property
     def stock_status(self):
@@ -64,12 +69,27 @@ class Product(models.Model):
     
 
 
+class Promotion(models.Model):
+    promo_name = models.CharField(max_length=50)
+    discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
+    start_date = models.DateField(help_text='Please use the format YYYY-MM-DD')
+    end_date = models.DateField(help_text='Please use the format YYYY-MM-DD')
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.promo_name
+
+
+
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    rating = models.PositiveIntegerField(default=5)  # You can adjust this based on your rating scale
+    rating = models.PositiveIntegerField(validators=[MaxValueValidator(5)])  # You can adjust this based on your rating scale
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f' {self.product}  rating:  {self.rating}/5'
 
     
     
@@ -105,16 +125,13 @@ class BillingAddress(models.Model):
     is_billing_address = models.BooleanField(default=False)
 
     
-def __str__(self):
-    if self.is_no_billing_address:
-        return "No Billing Address"
-    elif self.customer and hasattr(self.customer, 'user') and self.customer.user.username:
-        return f"{self.customer.user} - {self.address}"
-    else:
-        return str(self.address)
+    def __str__(self):
+        
+        if self.address is not None:
+            return f'{self.address}, {self.city}'
+        else:
+            return "No Billing Address"
 
-class Meta:
-        ordering = ('is_billing_address', 'id')
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -122,6 +139,7 @@ class Cart(models.Model):
     date_ordered = models.DateTimeField(auto_now_add=True)
     complete = models.BooleanField(default=False, null=True, blank=False)
     order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)    
+    
     def __str__(self):
         return str(self.user.username) + ' - ' + str(self.order_number)
     
@@ -150,13 +168,14 @@ class CartItem(models.Model):
         
     @property
     def get_total(self):
-        if self.product.discounted_price is not None:
-            total = (self.quantity * self.product.discounted_price)
-            return total 
-        else:
-            total = (self.quantity * self.product.price)
-            return total 
-    
+
+        price_to_use = self.product.discounted_price if self.product.discounted_price is not None else self.product.price
+        total = self.quantity * price_to_use
+
+        
+        return total
+
+
 
 
 
