@@ -1,5 +1,5 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,6 +12,7 @@ from .serializers import ProductSerializer, ReviewSerializer, CategorySerializer
 
 class ProductCreateView(APIView):
     serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -49,6 +50,29 @@ class ProductCreateView(APIView):
 
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ProductSearch(APIView):
+    serializer_class = ProductSerializer
+
+    def get(self, request):
+        query_type = request.GET.get('query_type')
+        query_value = request.GET.get('query_value')
+
+        if query_type and query_value:
+            if query_type == 'product':
+                products = Product.objects.filter(name__icontains=query_value)
+            elif query_type == 'category':
+                products = Product.objects.filter(category__name__icontains=query_value)
+            else:
+                return Response({"error": "Invalid query_type parameter"}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = self.serializer_class(products, many=True)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+        return Response({"error": "Missing or empty query parameters"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        
 
 class ProductListView(APIView):
     serializer_class = ProductSerializer
@@ -638,3 +662,20 @@ class DeleteCartItem(APIView):
         cart_item.delete()
         response = {'message': 'Cart item successfully deleted'}
         return Response(data=response, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+
+#ADMIN VIEWS
+    
+class SellerOrderView(APIView):
+    serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        seller = get_object_or_404(Seller, user=user)
+        cart_items = CartItem.objects.filter(product__seller=seller)
+        serializer = self.serializer_class(cart_items, many=True)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)

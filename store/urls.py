@@ -1,9 +1,9 @@
 from django.urls import path
 from . import views
 from .views import (
-    ProductCreateView, ProductListView, ProductDetailView, ProductUpdateView, ProductDeleteView,
+    ProductCreateView, ProductListView, ProductDetailView, ProductUpdateView, ProductDeleteView,ProductSearch,
     CategoryCreateView, CategoryListView, CategoryDetailView, CategoryUpdateView, CategoryDeleteView,
-    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView, CartView, AddToCartView,UpdateCartItem,DeleteCartItem
+    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView,SellerOrderView, CartView, AddToCartView,UpdateCartItem,DeleteCartItem
 )
 
 
@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/products/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
     path('api/products/<int:pk>/update/', ProductUpdateView.as_view(), name='product-update'),
     path('api/products/<int:pk>/delete/', ProductDeleteView.as_view(), name='product-delete'),
+    path('api/search/', ProductSearch.as_view(), name='search'),
 
     # PRODUCT REVIEW ENDPOINTS
     path('api/reviews/', ReviewCreateView.as_view(), name='review-create'),
@@ -32,6 +33,7 @@ urlpatterns = [
     # SELLER ENDPOINTS
     path('api/sellers/', SellerListCreateView.as_view(), name='seller-list-create'),
     path('api/sellers/<int:pk>/', SellerRetrieveUpdateDestroyView.as_view(), name='seller-retrieve-update-destroy'),
+    path('api/seller_orders/', SellerOrderView.as_view(), name='seller_orders'),
 
     # CART ENDPOINTS
     path('api/cart/', CartView.as_view(), name='cart-view'),

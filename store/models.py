@@ -32,8 +32,12 @@ class Product(models.Model):
     stock_quantity = models.PositiveIntegerField(default=0)
     restock_threshold = models.PositiveIntegerField(default=10)
 
+    #promotion on product
+
+    promo = models.ForeignKey('Promotion', on_delete=models.CASCADE, null = True, blank=True)
+
     # User association (e.g., creator or owner)
-    seller = models.ManyToManyField('Seller', blank=True)
+    seller = models.ForeignKey('Seller', on_delete=models.CASCADE, null=True)
 
 
 
@@ -43,13 +47,28 @@ class Product(models.Model):
         """
         Calculate the discounted price based on the discount percentage.
         """
-        if self.discount_percentage == 0:
+        if self.discount_percentage == 0 and not self.promo:
             return None
+    
+        elif self.discount_percentage is not None and not self.promo:
+            discount_factor = 1 - (self.discount_percentage / 100)
+            discounted_price = Decimal(self.price) * Decimal(discount_factor)
+            discounted_price = discounted_price.quantize(Decimal('0.00'))
+            return discounted_price
         
-        discount_factor = 1 - (self.discount_percentage / 100)
-        discounted_price = Decimal(self.price) * Decimal(discount_factor)
-        discounted_price = discounted_price.quantize(Decimal('0.00'))
-        return discounted_price
+        elif self.promo is not None and self.discount_percentage == 0:
+            promotion_discount_factor = 1 - (self.promo.discount_percentage / 100)
+            discounted_price = Decimal(promotion_discount_factor) * Decimal(self.price)
+        
+            discounted_price = discounted_price.quantize(Decimal('0.00'))
+            return discounted_price
+        else:
+            return "you either put in a discount percentage or promo or nothing at all. you can't put in both"
+
+
+
+        
+        
 
     
     @property
@@ -131,13 +150,22 @@ class BillingAddress(models.Model):
             return f'{self.address}, {self.city}'
         else:
             return "No Billing Address"
+        
+
+
+ORDER_STATUS_CHOICES = (
+    ('confirmed', 'Confirmed'),
+    ('shipped', 'Shipped'),
+    ('delivered', 'Delivered'),
+    ('returned', 'Returned'),
+)
 
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     address = models.ForeignKey(BillingAddress, related_name='billing_address', on_delete=models.CASCADE,null=True)
     date_ordered = models.DateTimeField(auto_now_add=True)
-    complete = models.BooleanField(default=False, null=True, blank=False)
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, null=True)    
     order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)    
     
     def __str__(self):
@@ -176,6 +204,16 @@ class CartItem(models.Model):
         return total
 
 
+
+
+
+
+
+class Return(models.Model):
+    order = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    returned_item = models.CharField(max_length=50)  # Assuming some identifier for the returned item
+    return_reason = models.TextField()
+    return_date = models.DateField()
 
 
 

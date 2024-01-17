@@ -11,15 +11,16 @@ class ProductSerializer(serializers.ModelSerializer):
     discounted_price = serializers.ReadOnlyField()
     reviews = ReviewSerializer(many=True, read_only=True)  # Include reviews in the serialized output
     stock_status = serializers.ReadOnlyField()
-    sellers = serializers.StringRelatedField(many=True, source='product.seller.all', read_only=True)
+    seller = serializers.StringRelatedField(many=True, source='product.seller.all', read_only=True)
+    promo = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Product
         fields = [
-            'id', 'user', 'name','category', 'description',  'price', 'discount_percentage','discounted_price','image',
+            'id', 'user', 'name','category', 'description',  'price', 'discount_percentage','discounted_price','promo','image',
             'is_available',  'created_at', 'updated_at',
             'sku',
-             'stock_status', 'manufacturer', 'stock_quantity', 'restock_threshold', 'sellers', 'reviews'
+             'stock_status', 'manufacturer', 'stock_quantity', 'restock_threshold', 'seller', 'reviews'
         ]
  
 
@@ -36,7 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'username']
 
 class SellerSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = serializers.PrimaryKeyRelatedField(queryset = User.objects.all())
 
     class Meta:
         model = Seller
@@ -78,7 +79,7 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['user', 'address', 'date_ordered', 'complete', 'order_number', 'cart_items', 'cart_total']
+        fields = ['user', 'address', 'date_ordered', 'status', 'order_number', 'cart_items', 'cart_total']
         read_only_fields = ['user',  'date_ordered',  'order_number', 'cart_items', 'cart_total']
 
 
