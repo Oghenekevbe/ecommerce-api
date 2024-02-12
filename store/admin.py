@@ -7,13 +7,10 @@ from .models import Product, Category,Seller, BillingAddress, Cart, CartItem, Re
 class ProductAdmin(admin.ModelAdmin):
     '''Admin View for '''
 
-    list_display = ('name','price', 'discounted_price','stock_status','uploaded_by','created_at')
+    list_display = ('name','price', 'discounted_price','stock_status','created_by', 'updated_by','created_at')
 
     ordering =('created_at',)
-    def uploaded_by(self, obj):
-        return obj.user.username if obj.user else None
 
-    uploaded_by.short_description = 'Uploaded By' #this makes it part of the product admin class
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -39,7 +36,7 @@ class CartAdmin(admin.ModelAdmin):
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('product', 'order', 'quantity', 'date_ordered', 'get_total')
+    list_display = ('product', 'order', 'quantity', 'date_ordered', 'get_total','status')
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):

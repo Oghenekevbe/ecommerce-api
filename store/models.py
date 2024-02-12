@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from django.core.validators import MaxValueValidator
 from django.db import models
@@ -7,15 +8,12 @@ import uuid
 # Create your models here.
 
 class Product(models.Model):
-    '''
-        sku: Stock Keeping Unit, a unique identifier for the product.
-        manufacturer: The manufacturer or brand of the product.
-        stock_quantity: The current quantity of the product in stock.
-        restock_threshold: The threshold at which the product should be restocked.
-        creator: A ForeignKey linking to the User who created the product. It's nullable, allowing for cases where the creator is not known or has been deleted.
-        owners: A ManyToManyField for associating multiple users as owners of the product. This might be useful if you want to track ownership by users.
-    '''
-    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='%(class)s_created', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='%(class)s_updated', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)    
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     category = models.ForeignKey('Category', on_delete=models.CASCADE)
@@ -91,14 +89,32 @@ class Product(models.Model):
 class Promotion(models.Model):
     promo_name = models.CharField(max_length=50)
     discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
-    start_date = models.DateField(help_text='Please use the format YYYY-MM-DD')
-    end_date = models.DateField(help_text='Please use the format YYYY-MM-DD')
+    start_date = models.DateTimeField(help_text='Please use the format YYYY-MM-DD')
+    end_date = models.DateTimeField(help_text='Please use the format YYYY-MM-DD')
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.promo_name
+    
+    def save(self, *args, **kwargs):
+        today = datetime.now().date()
+        start_date = self.start_date.date()
+        end_date = self.end_date.date()
 
+        print("Today:", today)
+        print("Start Date:", start_date)
+        print("End Date:", end_date)
 
+        if start_date <= today <= end_date:
+            # Promotion is currently active
+            self.discount_percentage = self.discount_percentage
+        else:
+            # Promotion has ended or not yet started
+            self.discount_percentage = 0
+
+        print("Discount Percentage:", self.discount_percentage)
+
+        super().save(*args, **kwargs)
 
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
@@ -154,6 +170,7 @@ class BillingAddress(models.Model):
 
 
 ORDER_STATUS_CHOICES = (
+    ('unconfirmed', 'Unconfirmed'),
     ('confirmed', 'Confirmed'),
     ('shipped', 'Shipped'),
     ('delivered', 'Delivered'),
@@ -165,7 +182,7 @@ class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     address = models.ForeignKey(BillingAddress, related_name='billing_address', on_delete=models.CASCADE,null=True)
     date_ordered = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, null=True)    
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, null=True, default = 'Unconfirmed')    
     order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)    
     
     def __str__(self):
@@ -182,11 +199,21 @@ class Cart(models.Model):
         return self.cart_items.count()
 
 
+ORDER_ITEM_STATUS_CHOICES = (
+    ('unconfirmed', 'Unconfirmed'),
+    ('confirmed', 'Confirmed'),
+    ('shipped', 'Shipped'),
+    ('delivered', 'Delivered'),
+    ('returned', 'Returned'),
+)
+
 class CartItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     order = models.ForeignKey(Cart, related_name='cart_items' , on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     date_ordered = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=ORDER_ITEM_STATUS_CHOICES, null=True, default = 'Unconfirmed')    
+
 
     def __str__(self):
         if self.product:

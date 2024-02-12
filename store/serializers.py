@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Product, Review, Seller,Cart,CartItem,BillingAddress
+from .models import Category, Product,Promotion, Review, Seller,Cart,CartItem,BillingAddress
 from user.models import User
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -9,22 +9,23 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     discounted_price = serializers.ReadOnlyField()
-    reviews = ReviewSerializer(many=True, read_only=True)  # Include reviews in the serialized output
+    reviews = ReviewSerializer(many=True, read_only=True)
     stock_status = serializers.ReadOnlyField()
-    seller = serializers.StringRelatedField(many=True, source='product.seller.all', read_only=True)
-    promo = serializers.StringRelatedField(read_only=True)
+    seller = serializers.PrimaryKeyRelatedField(queryset=Seller.objects.all())
+    promo = serializers.PrimaryKeyRelatedField(queryset=Promotion.objects.all())
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Product
         fields = [
-            'id', 'user', 'name','category', 'description',  'price', 'discount_percentage','discounted_price','promo','image',
-            'is_available',  'created_at', 'updated_at',
-            'sku',
-             'stock_status', 'manufacturer', 'stock_quantity', 'restock_threshold', 'seller', 'reviews'
+            'id', 'name', 'category', 'description', 'price', 'discount_percentage', 'discounted_price', 'promo', 'image',
+            'is_available', 'created_at', 'updated_at',
+            'sku', 'stock_status', 'manufacturer', 'stock_quantity', 'restock_threshold', 'seller', 'reviews',
+            'created_by', 'updated_by'
         ]
- 
-
-
+        read_only_fields = ['created_at', 'updated_at', 'stock_status', 'discounted_price', 'seller', 'promo', 'created_by', 'updated_by']
+        
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -48,20 +49,32 @@ class BillingAddressSerializer(serializers.ModelSerializer):
         model = BillingAddress
         fields = ['id', 'customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address']
 
+
+
+
+class PromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Promotion
+        fields = '__all__'
+
+
+
+
 class CartItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), source='product.id'
-    )
+        queryset=Product.objects.all(),source='product.id')
     quantity = serializers.IntegerField()
     price = serializers.ReadOnlyField(source='product.price')
+    seller = SellerSerializer(source='product.seller', read_only=True)    
     discounted_price = serializers.ReadOnlyField(source='product.discounted_price')
     get_total = serializers.ReadOnlyField()
 
 
 
+
     class Meta:
         model = CartItem
-        fields = ['id', 'product_id', 'order',  'date_ordered','quantity', 'price', 'discounted_price', 'get_total']
+        fields = ['id', 'product_id','seller', 'order',  'date_ordered','quantity', 'price', 'discounted_price', 'get_total','status']
 
     def update(self, instance, validated_data):
         instance.quantity = validated_data.get('quantity', instance.quantity)

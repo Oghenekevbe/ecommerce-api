@@ -7,48 +7,11 @@ from rest_framework import status,generics, permissions
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .models import Product, Category, Review,BillingAddress,Cart,CartItem,Seller
-from .serializers import ProductSerializer, ReviewSerializer, CategorySerializer,SellerSerializer,BillingAddressSerializer,CartItemSerializer,CartSerializer
+from .models import Product, Category, Review,BillingAddress,Cart,CartItem,Seller, Promotion
+from .permissions import IsSellerMixin,IsStaffMixin,IsAdminMixin
+from .serializers import ProductSerializer, ReviewSerializer, CategorySerializer,SellerSerializer,BillingAddressSerializer,CartItemSerializer,CartSerializer, PromotionSerializer
 
-class ProductCreateView(APIView):
-    serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            
-            properties={
-                'name': openapi.Schema(type=openapi.TYPE_STRING, 
-                
-                description='Name of the product'),
-                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Description of the product'),
-                # ... other properties ...
-            },
-            required=['name']
-        ),
-        responses={
-            201: openapi.Response('Product successfully created', ProductSerializer),
-            400: 'Invalid input data',
-        },
-        operation_summary = 'Create a product',
-        tags=['Products'],
-    )
-    def post(self, request):
-        """
-        Create a new product.
-        """
-        data = request.data
-        serializer = self.serializer_class(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            response = {
-                'message': 'Product successfully created',
-                'data': serializer.data
-            }
-            return Response(data=response, status=status.HTTP_201_CREATED)
-
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductSearch(APIView):
@@ -363,7 +326,7 @@ class CategoryDetailView(APIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-class CategoryUpdateView(APIView):
+class CategoryUpdateView(APIView,IsStaffMixin, IsAdminMixin):
     serializer_class = CategorySerializer
 
     @swagger_auto_schema(
@@ -397,7 +360,7 @@ class CategoryUpdateView(APIView):
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CategoryDeleteView(APIView):
+class CategoryDeleteView(APIView,IsStaffMixin,IsAdminMixin):
     @swagger_auto_schema(
         responses={
             204: 'Category successfully deleted',
@@ -414,7 +377,36 @@ class CategoryDeleteView(APIView):
     
 
 
-class SellerListCreateView(generics.ListCreateAPIView):
+'''SELLER APIS'''
+class ProductCreateView(generics.ListCreateAPIView, IsAdminMixin):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="List products",
+        operation_description="This endpoint retrieves a list of products.",
+        responses={200: ProductSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create a product",
+        operation_description="This endpoint creates a new product.",
+        request_body=ProductSerializer,
+        responses={201: ProductSerializer()},
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Set the 'created_by' field to the current user when creating a new product
+        serializer.save(created_by=request.user)
+        return super().create(request, *args, **kwargs)
+
+
+
+class SellerListCreateView(generics.ListCreateAPIView, IsAdminMixin, IsStaffMixin):
     """
     get:
     Return a list of all sellers.
@@ -456,7 +448,7 @@ class SellerListCreateView(generics.ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
-class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView, IsAdminMixin, IsStaffMixin):
     queryset = Seller.objects.all()
     serializer_class = SellerSerializer
     permission_classes = [permissions.IsAdminUser]
@@ -497,7 +489,7 @@ class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 
-
+'''CART APIS'''
 
 class CartView(APIView):
 
@@ -517,7 +509,7 @@ class CartView(APIView):
 
     def get(self, request):
         user = request.user
-        order, created= Cart.objects.get_or_create(user=user, complete=False)
+        order, created= Cart.objects.get_or_create(user=user)
         serializer = self.serializer_class(order)
 
         return Response(data= serializer.data, status=status.HTTP_200_OK )
@@ -568,7 +560,7 @@ class AddToCartView(APIView):
 
    def get(self,request, *args, **kwargs):
        user = request.user
-       order, created = Cart.objects.get_or_create(user=user, complete=False)
+       order, created = Cart.objects.get_or_create(user=user)
        cart_items = order.cart_items.all()
        serializer = self.serializer_class(cart_items, many=True)
 
@@ -586,7 +578,7 @@ class AddToCartView(APIView):
 
    def post(self,request):
        user = request.user
-       order, created = Cart.objects.get_or_create(user=user, complete=False)
+       order, created = Cart.objects.get_or_create(user=user)
        serializer = self.serializer_class(data=request.data,)
        if serializer.is_valid():
            serializer.save()
@@ -631,7 +623,6 @@ class UpdateCartItem(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Your DeleteCartItem view
 class DeleteCartItem(APIView):
     serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticated]
@@ -667,15 +658,220 @@ class DeleteCartItem(APIView):
 
 
 #ADMIN VIEWS
+
+
+
+
     
-class SellerOrderView(APIView):
-    serializer_class = CartItemSerializer
+class OrdersView(APIView,IsStaffMixin, IsAdminMixin):
+    serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve details of all orders by customers",
+        operation_description="This endpoint returns details of orders.",
+        responses={status.HTTP_200_OK: CartItemSerializer},
+        tags=['Cart'],
+    )
+
+
     def get(self, request):
-        user = request.user
-        seller = get_object_or_404(Seller, user=user)
-        cart_items = CartItem.objects.filter(product__seller=seller)
-        serializer = self.serializer_class(cart_items, many=True)
+        orders = Cart.objects.all()
+        serializer = self.serializer_class(orders, many=True)
 
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+    
+
+
+class OrderDetailView(APIView,IsStaffMixin, IsAdminMixin):
+    serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve details of specific orders by customers",
+        operation_description="This endpoint returns details of specific orders for the admin.",
+        responses={status.HTTP_200_OK: CartItemSerializer},
+        tags=['Cart'],
+    )
+
+    
+    def get(self, request, pk):
+        order = get_object_or_404(Cart, pk=pk)
+        serializer = self.serializer_class(order)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+    
+
+class AdminOrderUpdateDeleteView(APIView, IsAdminMixin):
+    serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve details of specific orders by customers",
+        operation_description="This endpoint returns details of specific orders for the admin.",
+        responses={status.HTTP_200_OK: CartItemSerializer},
+        tags=['Cart'],
+    )
+
+    
+    def put(self, request, pk):
+        data= request.data
+        order = get_object_or_404(Cart, pk=pk)
+        serializer = self.serializer_class(data,order)
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class AdminUpdateDeleteCartItem(APIView, IsAdminMixin):
+    serializer_class = CartItemSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve details of a specific cart item",
+        operation_description="This endpoint returns details of a cart item identified by its primary key.",
+        responses={status.HTTP_200_OK: CartItemSerializer},
+        tags=['Cart'],
+    )
+    def get(self, request, cart_pk, pk):
+        order = get_object_or_404(Cart, pk=cart_pk)
+        cart_item = get_object_or_404(CartItem, order=order, pk=pk)
+        serializer = self.serializer_class(cart_item)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_summary="Update a specific cart item",
+        operation_description="This endpoint updates the details of a specific cart item identified by its primary key.",
+        request_body=CartItemSerializer,
+        responses={status.HTTP_200_OK: CartItemSerializer, status.HTTP_204_NO_CONTENT: "Cart item successfully deleted", status.HTTP_400_BAD_REQUEST: "Bad Request"},
+        tags=['Cart'],
+    )
+    def put(self, request, cart_pk, pk):
+        order = get_object_or_404(Cart, pk=cart_pk)
+        cart_item = get_object_or_404(CartItem, order=order, pk=pk)
+        serializer = self.serializer_class(cart_item, data=request.data)
+        if serializer.is_valid():
+            serializer.save(partial=True)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete a specific cart item",
+        operation_description="This endpoint deletes a specific cart item identified by its primary key.",
+        responses={status.HTTP_204_NO_CONTENT: "Cart item successfully deleted"},
+        tags=['Cart'],
+    )
+    def delete(self, request, cart_pk, pk):
+        order = get_object_or_404(Cart, pk=cart_pk)
+        cart_item = get_object_or_404(CartItem, order=order, pk=pk)
+        cart_item.delete()
+        response = {'message': 'Cart item successfully deleted'}
+        return Response(data=response, status=status.HTTP_204_NO_CONTENT)
+
+
+
+class PromotionListCreateAPIView(generics.ListCreateAPIView, IsAdminMixin):
+
+    queryset = Promotion.objects.all()
+    serializer_class = PromotionSerializer
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+
+
+class PromotionRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView, IsAdminMixin):
+    queryset = Promotion.objects.all()
+    serializer_class = PromotionSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+    
+
+
+
+
+
+class ProductListCreateAPIView(generics.ListCreateAPIView, IsAdminMixin):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="List products",
+        operation_description="This endpoint retrieves a list of products.",
+        responses={200: ProductSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create a product",
+        operation_description="This endpoint creates a new product.",
+        request_body=ProductSerializer,
+        responses={201: ProductSerializer()},
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Set the 'created_by' field to the current user when creating a new product
+        serializer.save(created_by=request.user)
+        return super().create(request, *args, **kwargs)
+    
+class ProductRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView, IsAdminMixin):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve a product",
+        operation_description="This endpoint retrieves details of a specific product.",
+        responses={200: ProductSerializer()},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update a product",
+        operation_description="This endpoint updates details of a specific product.",
+        request_body=ProductSerializer,
+        responses={200: ProductSerializer()},
+    )
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        # Set the 'updated_by' field to the current user when updating a product
+        serializer.save(updated_by=request.user)
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Partial update a product",
+        operation_description="This endpoint partially updates details of a specific product.",
+        request_body=ProductSerializer,
+        responses={200: ProductSerializer()},
+    )
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete a product",
+        operation_description="This endpoint deletes a specific product.",
+        responses={204: "No Content"},
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
