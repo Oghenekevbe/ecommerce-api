@@ -61,7 +61,7 @@ class Product(models.Model):
             discounted_price = discounted_price.quantize(Decimal('0.00'))
             return discounted_price
         else:
-            return "you either put in a discount percentage or promo or nothing at all. you can't put in both"
+            return "CHECK YOUR PRODUCT. you either put in a discount percentage or promo or nothing at all. you can't put in both"
 
 
 
@@ -193,6 +193,8 @@ class Cart(models.Model):
         cart_items = self.cart_items.all()
         total = sum([item.get_total for item in cart_items])
         return total
+            
+
 
     @property
     def cart_item_count(self):
@@ -223,7 +225,6 @@ class CartItem(models.Model):
         
     @property
     def get_total(self):
-
         price_to_use = self.product.discounted_price if self.product.discounted_price is not None else self.product.price
         total = self.quantity * price_to_use
 

@@ -3,11 +3,17 @@ from . import views
 from .views import (
     ProductCreateView, ProductListView, ProductDetailView, ProductUpdateView, ProductDeleteView,ProductSearch,
     CategoryCreateView, CategoryListView, CategoryDetailView, CategoryUpdateView, CategoryDeleteView,
-    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView,OrdersView,OrderDetailView, AdminOrderUpdateDeleteView,CartView, AddToCartView,UpdateCartItem,DeleteCartItem, AdminUpdateDeleteCartItem,PromotionListCreateAPIView,PromotionRetrieveUpdateDestroyAPIView,ProductListCreateAPIView,ProductRetrieveUpdateDestroyAPIView
+    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView,OrdersView,OrderDetailView, AdminOrderUpdateDeleteView,CartView, AddToCartView,UpdateCartItem,DeleteCartItem, AdminUpdateDeleteCartItem,PromotionListCreateAPIView,PromotionRetrieveUpdateDestroyAPIView,ProductListCreateAPIView,ProductRetrieveUpdateDestroyAPIView,SellerOrdersAPIView,UserProfileView,BillingAddressListCreateAPIView,BillingAddressRetrieveUpdateDestroyAPIView,AdminUserBillingAddressesAPIView,AdminBillingAddressDetailAPIView
+
 )
 
 
 urlpatterns = [
+    #USER ENDPOINT
+    path('api/billing-addresses/', BillingAddressListCreateAPIView.as_view(), name='billing-address-list-create'),
+    path('api/billing-addresses/<int:pk>/', BillingAddressRetrieveUpdateDestroyAPIView.as_view(), name='billing-address-retrieve-update-destroy'),
+
+
     # PRODUCT ENDPOINTS
     path('api/products/', ProductListView.as_view(), name='product-list'),
     path('api/products/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
@@ -31,8 +37,9 @@ urlpatterns = [
 
     # SELLER ENDPOINTS
     path('api/products/create/', ProductCreateView.as_view(), name='product-create'),
-    path('api/sellers/<int:pk>/', SellerRetrieveUpdateDestroyView.as_view(), name='seller-retrieve-update-destroy'),
-
+    path('api/seller/orders/', SellerOrdersAPIView.as_view(), name='seller-orders'),
+    
+    
     # CART ENDPOINTS
     path('api/cart/', CartView.as_view(), name='cart-view'),
     path('api/add_to_cart/', AddToCartView.as_view(), name='add-to-cart'),
@@ -49,7 +56,11 @@ urlpatterns = [
     path('api/admin/promotions/<int:pk>/', PromotionRetrieveUpdateDestroyAPIView.as_view(), name='promotion-retrieve-update-destroy'),
     path('api/admin/products/', ProductListCreateAPIView.as_view(), name='admin-product-list-create'),
     path('api/admin/products/<int:pk>/', ProductRetrieveUpdateDestroyAPIView.as_view(), name='admin-product-retrieve-update-destroy'),
-    path('api/sellers/', SellerListCreateView.as_view(), name='seller-list-create'),
+    path('api/admin/sellers/', SellerListCreateView.as_view(), name='seller-list-create'),
+    path('api/admin/sellers/<int:pk>/', SellerRetrieveUpdateDestroyView.as_view(), name='seller-retrieve-update-destroy'),
+    path('api/user/profile/', UserProfileView.as_view(), name='user-profile'),
+    path('api/admin/<int:user_id>/billing-addresses/', AdminUserBillingAddressesAPIView.as_view(), name='admin-user-billing-addresses'),
+    path('api/admin/billing-addresses/<int:pk>/', AdminBillingAddressDetailAPIView.as_view(), name='admin-billing-address-detail'),
 
     
     

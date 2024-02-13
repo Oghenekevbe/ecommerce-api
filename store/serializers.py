@@ -60,31 +60,18 @@ class PromotionSerializer(serializers.ModelSerializer):
 
 
 
+  
+
+
+
 class CartItemSerializer(serializers.ModelSerializer):
-    product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(),source='product.id')
-    quantity = serializers.IntegerField()
     price = serializers.ReadOnlyField(source='product.price')
     seller = SellerSerializer(source='product.seller', read_only=True)    
     discounted_price = serializers.ReadOnlyField(source='product.discounted_price')
     get_total = serializers.ReadOnlyField()
-
-
-
-
     class Meta:
         model = CartItem
-        fields = ['id', 'product_id','seller', 'order',  'date_ordered','quantity', 'price', 'discounted_price', 'get_total','status']
-
-    def update(self, instance, validated_data):
-        instance.quantity = validated_data.get('quantity', instance.quantity)
-        instance.save()
-        return instance
-
-    
-
-
-
+        fields = ['id', 'product', 'order', 'quantity','price','seller','discounted_price', 'get_total', 'date_ordered', 'status']
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -95,4 +82,7 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['user', 'address', 'date_ordered', 'status', 'order_number', 'cart_items', 'cart_total']
         read_only_fields = ['user',  'date_ordered',  'order_number', 'cart_items', 'cart_total']
 
-
+class BillingAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BillingAddress
+        fields = ['id', 'customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address']

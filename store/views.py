@@ -1,6 +1,5 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status,generics, permissions
@@ -10,6 +9,9 @@ from drf_yasg import openapi
 from .models import Product, Category, Review,BillingAddress,Cart,CartItem,Seller, Promotion
 from .permissions import IsSellerMixin,IsStaffMixin,IsAdminMixin
 from .serializers import ProductSerializer, ReviewSerializer, CategorySerializer,SellerSerializer,BillingAddressSerializer,CartItemSerializer,CartSerializer, PromotionSerializer
+from user.serializers import UserSerializer
+
+
 
 
 
@@ -406,87 +408,22 @@ class ProductCreateView(generics.ListCreateAPIView, IsAdminMixin):
 
 
 
-class SellerListCreateView(generics.ListCreateAPIView, IsAdminMixin, IsStaffMixin):
-    """
-    get:
-    Return a list of all sellers.
 
-    post:
-    Create a new seller.
-    """
-    queryset = Seller.objects.all()
-    serializer_class = SellerSerializer
-    permission_classes = [permissions.IsAdminUser]
 
+
+class SellerOrdersAPIView(APIView, IsSellerMixin):
     @swagger_auto_schema(
-        responses={
-            200: openapi.Response('List of Sellers', SellerSerializer(many=True)),
-            201: openapi.Response('Created Seller', SellerSerializer),
-        },
-        tags=['Sellers'],
-        operation_summary = 'Get a list of all sellers',
+        tags=["Seller"],
+        operation_summary="Get Seller Orders",
+        operation_description="Get all orders associated with the authenticated seller.",
+        responses={200: CartItemSerializer(many=True)}
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
-                'address': openapi.Schema(type=openapi.TYPE_STRING),
-                'phone_number': openapi.Schema(type=openapi.TYPE_STRING),
-            },
-            required=['company_name', 'address', 'phone_number'],
-        ),
-        responses={
-            201: openapi.Response('Created Seller', SellerSerializer),
-        },
-        tags=['Sellers'],
-        operation_summary = 'Create a seller',
-    )
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-
-class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView, IsAdminMixin, IsStaffMixin):
-    queryset = Seller.objects.all()
-    serializer_class = SellerSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-    @swagger_auto_schema(
-        responses={
-            200: openapi.Response('Details of a seller', SellerSerializer),
-            404: 'Seller not found',
-        },
-        tags=['Sellers'],
-        operation_summary = 'Update details of a specific  seller',
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
-                'address': openapi.Schema(type=openapi.TYPE_STRING),
-                'phone_number': openapi.Schema(type=openapi.TYPE_STRING),
-            },
-            required=['company_name'],  # Specify required properties here
-        ),
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        responses={
-            200: openapi.Response('Details of a seller', SellerSerializer),
-            204: 'No Content',
-            404: 'Seller not found',
-        },
-        tags=['Sellers'],
-        operation_summary = 'Delete a seller',
-    )
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
-
-
-
+    def get(self, request):
+        # Assuming the seller is authenticated and available in the request
+        seller = request.user.seller
+        seller_orders = CartItem.objects.filter(product__seller=seller).distinct()
+        serializer = CartItemSerializer(seller_orders, many=True)
+        return Response(serializer.data)
 
 
 '''CART APIS'''
@@ -655,6 +592,67 @@ class DeleteCartItem(APIView):
         return Response(data=response, status=status.HTTP_204_NO_CONTENT)
     
 
+'''ADDRESS API'''
+
+class BillingAddressListCreateAPIView(generics.ListCreateAPIView):
+    queryset = BillingAddress.objects.all()
+    serializer_class = BillingAddressSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="List all billing addresses or create a new one.",
+        responses={200: BillingAddressSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Create a new billing address.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'address': openapi.Schema(type=openapi.TYPE_STRING),
+                'city': openapi.Schema(type=openapi.TYPE_STRING),
+                'state': openapi.Schema(type=openapi.TYPE_STRING),
+                'zipcode': openapi.Schema(type=openapi.TYPE_STRING),
+                'is_billing_address': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+            }
+        ),
+        responses={201: BillingAddressSerializer()}
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+class BillingAddressRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = BillingAddress.objects.all()
+    serializer_class = BillingAddressSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Retrieve a billing address by ID.",
+        responses={200: BillingAddressSerializer()}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Update a billing address by ID.",
+        request_body=BillingAddressSerializer,
+        responses={200: BillingAddressSerializer()}
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Delete a billing address by ID.",
+        responses={204: None}
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
+
+
+
 
 
 #ADMIN VIEWS
@@ -773,33 +771,59 @@ class AdminUpdateDeleteCartItem(APIView, IsAdminMixin):
 
 
 class PromotionListCreateAPIView(generics.ListCreateAPIView, IsAdminMixin):
-
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
 
+    @swagger_auto_schema(
+        tags=["promotion"],
+        operation_summary="List Promotions",
+        operation_description="Get a list of all promotions.",
+        responses={200: PromotionSerializer(many=True)}
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        tags=["promotion"],
+        operation_summary="Create Promotion",
+        operation_description="Create a new promotion.",
+        request_body=PromotionSerializer,
+        responses={201: PromotionSerializer()}
+    )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
-    
 
 
 class PromotionRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView, IsAdminMixin):
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
 
+    @swagger_auto_schema(
+        tags=["promotion"],
+        operation_summary="Retrieve Promotion",
+        operation_description="Retrieve details of a specific promotion.",
+        responses={200: PromotionSerializer()}
+    )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        tags=["promotion"],
+        operation_summary="Update Promotion",
+        operation_description="Update details of a specific promotion.",
+        request_body=PromotionSerializer,
+        responses={200: PromotionSerializer()}
+    )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-
+    @swagger_auto_schema(
+        tags=["promotion"],
+        operation_summary="Delete Promotion",
+        operation_description="Delete a specific promotion."
+    )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
-    
-
 
 
 
@@ -875,3 +899,132 @@ class ProductRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView,
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+    
+
+class SellerListCreateView(generics.ListCreateAPIView, IsAdminMixin, IsStaffMixin):
+    """
+    get:
+    Return a list of all sellers.
+
+    post:
+    Create a new seller.
+    """
+    queryset = Seller.objects.all()
+    serializer_class = SellerSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response('List of Sellers', SellerSerializer(many=True)),
+            201: openapi.Response('Created Seller', SellerSerializer),
+        },
+        tags=['Sellers'],
+        operation_summary = 'Get a list of all sellers',
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'address': openapi.Schema(type=openapi.TYPE_STRING),
+                'phone_number': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=['company_name', 'address', 'phone_number'],
+        ),
+        responses={
+            201: openapi.Response('Created Seller', SellerSerializer),
+        },
+        tags=['Sellers'],
+        operation_summary = 'Create a seller',
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+class SellerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView, IsAdminMixin, IsStaffMixin):
+    queryset = Seller.objects.all()
+    serializer_class = SellerSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response('Details of a seller', SellerSerializer),
+            404: 'Seller not found',
+        },
+        tags=['Sellers'],
+        operation_summary = 'Update details of a specific  seller',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'address': openapi.Schema(type=openapi.TYPE_STRING),
+                'phone_number': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=['company_name'],  # Specify required properties here
+        ),
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response('Details of a seller', SellerSerializer),
+            204: 'No Content',
+            404: 'Seller not found',
+        },
+        tags=['Sellers'],
+        operation_summary = 'Delete a seller',
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+
+class UserProfileView(APIView, IsStaffMixin):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(
+        responses={200: UserSerializer()},
+        operation_summary="Get user profile",
+        operation_description="Get the profile of the authenticated user."
+    )
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+
+class AdminUserBillingAddressesAPIView(generics.ListAPIView):
+    queryset = BillingAddress.objects.all()
+    serializer_class = BillingAddressSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="List all billing addresses for a user by user ID.",
+        responses={200: BillingAddressSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        user_id = kwargs.get('user_id')
+        if user_id:
+            queryset = self.get_queryset().filter(customer__id=user_id)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        else:
+            return super().list(request, *args, **kwargs)
+
+
+class AdminBillingAddressDetailAPIView(generics.RetrieveAPIView):
+    queryset = BillingAddress.objects.all()
+    serializer_class = BillingAddressSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Retrieve a billing address by its ID.",
+        responses={200: BillingAddressSerializer()}
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+
