@@ -10,6 +10,8 @@ from .models import Product, Category, Review,BillingAddress,Cart,CartItem,Selle
 from .permissions import IsSellerMixin,IsStaffMixin,IsAdminMixin
 from .serializers import ProductSerializer, ReviewSerializer, CategorySerializer,SellerSerializer,BillingAddressSerializer,CartItemSerializer,CartSerializer, PromotionSerializer
 from user.serializers import UserSerializer
+from django.contrib.auth import get_user_model
+
 
 
 
@@ -1002,29 +1004,9 @@ class AdminUserBillingAddressesAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description="List all billing addresses for a user by user ID.",
+        operation_description="List all billing addresses for all users and specific user by user ID.",
         responses={200: BillingAddressSerializer(many=True)}
     )
     def get(self, request, *args, **kwargs):
-        user_id = kwargs.get('user_id')
-        if user_id:
-            queryset = self.get_queryset().filter(customer__id=user_id)
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
-        else:
-            return super().list(request, *args, **kwargs)
-
-
-class AdminBillingAddressDetailAPIView(generics.RetrieveAPIView):
-    queryset = BillingAddress.objects.all()
-    serializer_class = BillingAddressSerializer
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description="Retrieve a billing address by its ID.",
-        responses={200: BillingAddressSerializer()}
-    )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
+        return super().get(request, *args, **kwargs)
 

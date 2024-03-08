@@ -3,7 +3,7 @@ from . import views
 from .views import (
     ProductCreateView, ProductListView, ProductDetailView, ProductUpdateView, ProductDeleteView,ProductSearch,
     CategoryCreateView, CategoryListView, CategoryDetailView, CategoryUpdateView, CategoryDeleteView,
-    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView,OrdersView,OrderDetailView, AdminOrderUpdateDeleteView,CartView, AddToCartView,UpdateCartItem,DeleteCartItem, AdminUpdateDeleteCartItem,PromotionListCreateAPIView,PromotionRetrieveUpdateDestroyAPIView,ProductListCreateAPIView,ProductRetrieveUpdateDestroyAPIView,SellerOrdersAPIView,UserProfileView,BillingAddressListCreateAPIView,BillingAddressRetrieveUpdateDestroyAPIView,AdminUserBillingAddressesAPIView,AdminBillingAddressDetailAPIView
+    ReviewCreateView, ReviewListView, ReviewDetailView, ReviewUpdateView, ReviewDeleteView,SellerListCreateView,SellerRetrieveUpdateDestroyView,OrdersView,OrderDetailView, AdminOrderUpdateDeleteView,CartView, AddToCartView,UpdateCartItem,DeleteCartItem, AdminUpdateDeleteCartItem,PromotionListCreateAPIView,PromotionRetrieveUpdateDestroyAPIView,ProductListCreateAPIView,ProductRetrieveUpdateDestroyAPIView,SellerOrdersAPIView,UserProfileView,BillingAddressListCreateAPIView,BillingAddressRetrieveUpdateDestroyAPIView,AdminUserBillingAddressesAPIView
 
 )
 
@@ -59,8 +59,7 @@ urlpatterns = [
     path('api/admin/sellers/', SellerListCreateView.as_view(), name='seller-list-create'),
     path('api/admin/sellers/<int:pk>/', SellerRetrieveUpdateDestroyView.as_view(), name='seller-retrieve-update-destroy'),
     path('api/user/profile/', UserProfileView.as_view(), name='user-profile'),
-    path('api/admin/<int:user_id>/billing-addresses/', AdminUserBillingAddressesAPIView.as_view(), name='admin-user-billing-addresses'),
-    path('api/admin/billing-addresses/<int:pk>/', AdminBillingAddressDetailAPIView.as_view(), name='admin-billing-address-detail'),
+    path('api/admin/billing-addresses/', AdminUserBillingAddressesAPIView.as_view(), name='admin-user-billing-addresses'),
 
     
     

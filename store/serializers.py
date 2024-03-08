@@ -79,7 +79,7 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['user', 'address', 'date_ordered', 'status', 'order_number', 'cart_items', 'cart_total']
+        fields = ['user', 'address', 'date_ordered', 'status', 'order_number', 'cart_items','cart_item_count', 'cart_total']
         read_only_fields = ['user',  'date_ordered',  'order_number', 'cart_items', 'cart_total']
 
 class BillingAddressSerializer(serializers.ModelSerializer):
