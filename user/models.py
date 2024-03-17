@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 class CustomerUserManager(BaseUserManager):
+
     def create_user(self, email=None, password=None, **extra_fields):
         if not email:
             raise ValueError("The Email field must be set")

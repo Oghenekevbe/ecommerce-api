@@ -51,13 +51,10 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "user.User"
 
 
-# Add the ACTIVATE_JWT setting and set it to True
-ACTIVATE_JWT = True
-
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",  # django-oauth-toolkit >= 1.0.0
         "drf_social_oauth2.authentication.SocialAuthentication",
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",  # django-oauth-toolkit >= 1.0.0
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
 }
@@ -102,9 +99,6 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_EACH_TIME": False,
 }
 
-# clientid 1JJHvXb68a4p45pt3nvRvRoHY0rQq0mBqDce3A5o
-
-# clientsecret MMn7WkzkCzIDMyj2Ari34n43mlQBZNinGvlUHdCnixkqIYvkYO8w9E9EFYQACtHnOd6nEr5AIWdSf1PdbjsAoudm9dodrmis4tZkRoq6fHF9Y9135MbN8C6jiQnQcI9L
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
