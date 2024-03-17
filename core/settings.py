@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -38,38 +39,72 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'drf_yasg',
+    "drf_yasg",
     "rest_framework",
-    'store',
-    'user',
+    "oauth2_provider",
+    "social_django",
+    "drf_social_oauth2",
+    "store",
+    "user",
 ]
 
-AUTH_USER_MODEL = 'user.User'
+AUTH_USER_MODEL = "user.User"
+
+
+# Add the ACTIVATE_JWT setting and set it to True
+ACTIVATE_JWT = True
 
 REST_FRAMEWORK = {
-    
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",  # django-oauth-toolkit >= 1.0.0
+        "drf_social_oauth2.authentication.SocialAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
-    
+}
+
+
+AUTHENTICATION_BACKENDS = (
+    # Google  OAuth2
+    "social_core.backends.google.GoogleOAuth2",
+    # drf-social-oauth2
+    "drf_social_oauth2.backends.DjangoOAuth2",
+    # Django
+    "django.contrib.auth.backends.ModelBackend",
+)
+
+
+# Google configuration
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = (
+    "163240383282-qgj2ctpdm4cdhkflkokkah1qknn0sgi6.apps.googleusercontent.com"
+)
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = "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"
+
+# Define SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE to get extra permissions from Google.
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+]
+
+OAUTH2_PROVIDER = {
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 604800,  # 7 days
 }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "ROTATE_REFRESH_TOKENS": False,
-
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
     "VERIFYING_KEY": None,
     "AUTH_HEADER_TYPES": ("Bearer",),
-
     "SLIDING_TOKEN_LIFETIME": timedelta(days=30),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
-    'SLIDING_TOKEN_LIFETIME_GRACE_PERIOD': timedelta(minutes=60),
-    'SLIDING_TOKEN_REFRESH_EACH_TIME': False,
-
+    "SLIDING_TOKEN_LIFETIME_GRACE_PERIOD": timedelta(minutes=60),
+    "SLIDING_TOKEN_REFRESH_EACH_TIME": False,
 }
+
+# clientid 1JJHvXb68a4p45pt3nvRvRoHY0rQq0mBqDce3A5o
+
+# clientsecret MMn7WkzkCzIDMyj2Ari34n43mlQBZNinGvlUHdCnixkqIYvkYO8w9E9EFYQACtHnOd6nEr5AIWdSf1PdbjsAoudm9dodrmis4tZkRoq6fHF9Y9135MbN8C6jiQnQcI9L
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -94,6 +129,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "social_django.context_processors.backends",
+                "social_django.context_processors.login_redirect",
             ],
         },
     },
