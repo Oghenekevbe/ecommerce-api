@@ -39,52 +39,24 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # thrid-party
     "drf_yasg",
     "rest_framework",
-    "oauth2_provider",
-    "social_django",
-    "drf_social_oauth2",
+    # apps
     "store",
     "user",
 ]
+
 
 AUTH_USER_MODEL = "user.User"
 
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "drf_social_oauth2.authentication.SocialAuthentication",
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",  # django-oauth-toolkit >= 1.0.0
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
 }
 
-
-AUTHENTICATION_BACKENDS = (
-    # Google  OAuth2
-    "social_core.backends.google.GoogleOAuth2",
-    # drf-social-oauth2
-    "drf_social_oauth2.backends.DjangoOAuth2",
-    # Django
-    "django.contrib.auth.backends.ModelBackend",
-)
-
-
-# Google configuration
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = (
-    "163240383282-qgj2ctpdm4cdhkflkokkah1qknn0sgi6.apps.googleusercontent.com"
-)
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = "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"
-
-# Define SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE to get extra permissions from Google.
-SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
-]
-
-OAUTH2_PROVIDER = {
-    "ACCESS_TOKEN_EXPIRE_SECONDS": 604800,  # 7 days
-}
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
@@ -98,6 +70,14 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_LIFETIME_GRACE_PERIOD": timedelta(minutes=60),
     "SLIDING_TOKEN_REFRESH_EACH_TIME": False,
 }
+
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST_USER = "mywebdevprojects@gmail.com"
+EMAIL_HOST_PASSWORD = "bufnasvredwmbtia"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 
 MIDDLEWARE = [
@@ -123,8 +103,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "social_django.context_processors.backends",
-                "social_django.context_processors.login_redirect",
             ],
         },
     },
