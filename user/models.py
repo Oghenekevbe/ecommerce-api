@@ -37,15 +37,18 @@ class CustomerUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractUser):
+class CustomUser(AbstractUser):
     email = models.EmailField(max_length=254, unique=True)
-
+    is_active = models.BooleanField(default=False)
     # Specify the custom user manager
     objects = CustomerUserManager()
 
+    # Set username to None to effectively ignore it
+    username = None
+
     # Set the email as the unique identifier
     USERNAME_FIELD = "email"
-    # Require the username field for creating users
+
     REQUIRED_FIELDS = []
 
     def __str__(self):

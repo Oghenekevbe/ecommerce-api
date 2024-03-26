@@ -1,11 +1,24 @@
 from rest_framework import serializers
-from .models import Category, Product,Promotion, Review, Seller,Cart,CartItem,BillingAddress
-from user.models import User
+from .models import (
+    Category,
+    Product,
+    Promotion,
+    Review,
+    Seller,
+    Cart,
+    CartItem,
+    BillingAddress,
+)
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = ('id', 'product', 'user', 'rating', 'comment', 'created_at')
+        fields = ("id", "product", "user", "rating", "comment", "created_at")
+
 
 class ProductSerializer(serializers.ModelSerializer):
     discounted_price = serializers.ReadOnlyField()
@@ -19,59 +32,101 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'category', 'description', 'price', 'discount_percentage', 'discounted_price', 'promo', 'image',
-            'is_available', 'created_at', 'updated_at',
-            'sku', 'stock_status', 'manufacturer', 'stock_quantity', 'restock_threshold', 'seller', 'reviews',
-            'created_by', 'updated_by'
+            "id",
+            "name",
+            "category",
+            "description",
+            "price",
+            "discount_percentage",
+            "discounted_price",
+            "promo",
+            "image",
+            "is_available",
+            "created_at",
+            "updated_at",
+            "sku",
+            "stock_status",
+            "manufacturer",
+            "stock_quantity",
+            "restock_threshold",
+            "seller",
+            "reviews",
+            "created_by",
+            "updated_by",
         ]
-        read_only_fields = ['created_at', 'updated_at', 'stock_status', 'discounted_price', 'seller', 'promo', 'created_by', 'updated_by']
-        
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+            "stock_status",
+            "discounted_price",
+            "seller",
+            "promo",
+            "created_by",
+            "updated_by",
+        ]
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = "__all__"
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'username']
+        fields = ["id", "email", "username"]
+
 
 class SellerSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset = User.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = Seller
-        fields = ['id', 'user', 'company_name', 'address', 'phone_number']
+        fields = ["id", "user", "company_name", "address", "phone_number"]
+
 
 class BillingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingAddress
-        fields = ['id', 'customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address']
-
-
+        fields = [
+            "id",
+            "customer",
+            "address",
+            "city",
+            "state",
+            "zipcode",
+            "date_added",
+            "is_billing_address",
+        ]
 
 
 class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
-        fields = '__all__'
-
-
-
-
-  
-
+        fields = "__all__"
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    price = serializers.ReadOnlyField(source='product.price')
-    seller = SellerSerializer(source='product.seller', read_only=True)    
-    discounted_price = serializers.ReadOnlyField(source='product.discounted_price')
+    price = serializers.ReadOnlyField(source="product.price")
+    seller = SellerSerializer(source="product.seller", read_only=True)
+    discounted_price = serializers.ReadOnlyField(source="product.discounted_price")
     get_total = serializers.ReadOnlyField()
+
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'order', 'quantity','price','seller','discounted_price', 'get_total', 'date_ordered', 'status']
+        fields = [
+            "id",
+            "product",
+            "order",
+            "quantity",
+            "price",
+            "seller",
+            "discounted_price",
+            "get_total",
+            "date_ordered",
+            "status",
+        ]
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -79,10 +134,35 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['user', 'address', 'date_ordered', 'status', 'order_number', 'cart_items','cart_item_count', 'cart_total']
-        read_only_fields = ['user',  'date_ordered',  'order_number', 'cart_items', 'cart_total']
+        fields = [
+            "user",
+            "address",
+            "date_ordered",
+            "status",
+            "order_number",
+            "cart_items",
+            "cart_item_count",
+            "cart_total",
+        ]
+        read_only_fields = [
+            "user",
+            "date_ordered",
+            "order_number",
+            "cart_items",
+            "cart_total",
+        ]
+
 
 class BillingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingAddress
-        fields = ['id', 'customer', 'address', 'city', 'state', 'zipcode', 'date_added', 'is_billing_address']
+        fields = [
+            "id",
+            "customer",
+            "address",
+            "city",
+            "state",
+            "zipcode",
+            "date_added",
+            "is_billing_address",
+        ]

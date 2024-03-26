@@ -48,7 +48,12 @@ INSTALLED_APPS = [
 ]
 
 
-AUTH_USER_MODEL = "user.User"
+AUTH_USER_MODEL = "user.CustomUser"
+
+AUTHENTICATION_BACKENDS = [
+    "user.email_backend.EmailAuthenticationBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 
 
 REST_FRAMEWORK = {
