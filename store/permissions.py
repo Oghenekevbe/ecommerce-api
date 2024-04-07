@@ -1,15 +1,16 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
 
 
-#userpassestextmixins
+# userpassestextmixins
 class IsSellerMixin(UserPassesTestMixin):
     def test_func(self):
-        return hasattr(self.request.user, 'seller')
+        return hasattr(self.request.user, "seller", "seller.is_active")
 
 
 class IsStaffMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_staff
+
 
 class IsAdminMixin(UserPassesTestMixin):
     def test_func(self):

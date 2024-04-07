@@ -152,6 +152,7 @@ class Seller(models.Model):
     company_name = models.CharField(max_length=255)
     address = models.TextField()
     phone_number = models.CharField(max_length=15)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.company_name
@@ -196,14 +197,16 @@ class Cart(models.Model):
         related_name="billing_address",
         on_delete=models.CASCADE,
         null=True,
+        blank=True,
     )
     date_ordered = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
-        max_length=20, choices=ORDER_STATUS_CHOICES, null=True, default="Unconfirmed"
+        max_length=20, choices=ORDER_STATUS_CHOICES, null=True, default="unconfirmed"
     )
     order_number = models.UUIDField(
         default=uuid.uuid4, primary_key=True, editable=False
     )
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return str(self.user.email) + " - " + str(self.order_number)

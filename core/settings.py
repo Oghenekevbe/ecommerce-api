@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # apps
     "store",
     "user",
+    "paymentapp",
 ]
 
 
