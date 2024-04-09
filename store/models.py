@@ -9,6 +9,21 @@ User = get_user_model()
 
 # Create your models here.
 
+CURRENCY_CHOICES = (
+    ("USD", "United States Dollar"),
+    ("NGN", "Nigerian Naira"),
+    ("EUR", "Euro"),
+    ("GBP", "British Pound Sterling"),
+    ("GHS", "Ghanaian Cedi"),
+    ("KES", "Kenyan Shilling"),
+    ("ZAR", "South African Rand"),
+    ("UGX", "Ugandan Shilling"),
+    ("CAD", "Canadian Dollar"),
+    ("AUD", "Australian Dollar"),
+    ("JPY", "Japanese Yen"),
+    ("INR", "Indian Rupee"),
+)
+
 
 class Product(models.Model):
 
@@ -36,6 +51,7 @@ class Product(models.Model):
     image = models.ImageField(upload_to="product_images/", blank=True, null=True)
     is_available = models.BooleanField(default=True)
     discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

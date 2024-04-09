@@ -10,7 +10,7 @@ PAYMENT_CHOICES = (
 
 
 class PaymentModel(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    order = models.ForeignKey(Cart, on_delete=models.CASCADE)
     mode_of_payment = models.CharField(
         max_length=30, null=True, choices=PAYMENT_CHOICES
     )

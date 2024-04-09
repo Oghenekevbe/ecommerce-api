@@ -108,6 +108,7 @@ class PromotionSerializer(serializers.ModelSerializer):
 
 
 class CartItemSerializer(serializers.ModelSerializer):
+    name = serializers.ReadOnlyField(source="product.name")
     price = serializers.ReadOnlyField(source="product.price")
     seller = SellerSerializer(source="product.seller", read_only=True)
     discounted_price = serializers.ReadOnlyField(source="product.discounted_price")
@@ -118,6 +119,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "product",
+            "name",
             "order",
             "quantity",
             "price",
