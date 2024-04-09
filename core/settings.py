@@ -90,6 +90,9 @@ EMAIL_BACKEND = config("EMAIL_BACKEND")
 # Flutterwave secret key
 FLUTTERWAVE_SECRET_KEY = config("FLUTTERWAVE_SECRET_KEY")
 
+# PAYSTACK SECRET KEY
+PAYSTACK_KEY = config("PAYSTACK_KEY")
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

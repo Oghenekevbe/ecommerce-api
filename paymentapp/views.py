@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import APIView
@@ -26,14 +26,17 @@ class OrderPayment(APIView):
         print("data = ", data)
         print("mode of payment: ", data.get("mode_of_payment"))
         if data.get("mode_of_payment") == "flutterwave":
-            make_payment(order)
+            pay_with_flutterwave(order)
             return Response({"message": "You will be redirected to flutterwave site"})
+        elif data.get("mode_of_payment") == "paystack":
+            pay_with_paystack(order)
+            return Response({"message": "You will be redirected to paystack site"})
 
     def get_object(self, user):
         return get_object_or_404(self.model, is_active=True, user=user)
 
 
-def make_payment(order):
+def pay_with_flutterwave(order):
     url = "https://api.flutterwave.com/v3/payments"
     headers = {
         "Content-Type": "application/json",
@@ -73,16 +76,16 @@ def make_payment(order):
         print("Failed to make payment. Status code:", response.status_code)
 
 
-def pay_with_paystack(request):
-    email = request.POST.get("email")
-    amount = request.POST.get("amount")
-    first_name = request.POST.get("first_name")
-    last_name = request.POST.get("last_name")
+def pay_with_paystack(order):
+    email = order.user.email
+    amount = float(order.cart_total * 100)
+    first_name = ""
+    last_name = ""
 
     # Initialize payment with Paystack
     paystack_url = "https://api.paystack.co/transaction/initialize"
     headers = {
-        "Authorization": "Bearer YOUR_SECRET_KEY",  # Replace with your secret key
+        "Authorization": f"Bearer {settings.PAYSTACK_KEY}",
         "Content-Type": "application/json",
     }
     data = {
@@ -97,8 +100,15 @@ def pay_with_paystack(request):
 
     if response.status_code == 200:
         payment_data = response.json()
-        # You can save payment data or send it to the frontend for further processing
-        return JsonResponse(payment_data)
+        payment_url = payment_data.get("data", {}).get("authorization_url")
+        if payment_url:
+            print(payment_data)  # Print payment data for debugging
+            print(payment_url)  # Print payment URL for debugging
+            return redirect(payment_url)
+        else:
+            return JsonResponse(
+                {"error": "Payment URL not found in response"}, status=400
+            )
     else:
         return JsonResponse({"error": "Failed to initialize payment"}, status=400)
 
