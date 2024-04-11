@@ -93,6 +93,12 @@ FLUTTERWAVE_SECRET_KEY = config("FLUTTERWAVE_SECRET_KEY")
 # PAYSTACK SECRET KEY
 PAYSTACK_KEY = config("PAYSTACK_KEY")
 
+REMITA_CREDENTIALS = {
+    "merchantId": config("MERCHANT_ID"),
+    "apiKey": config("API_KEY"),
+    "serviceTypeId": config("SERVICE_TYPE_ID"),
+    "secretKey": config("REMITA_SECRET_KEY"),  # Accessing the Remita-related secret key
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

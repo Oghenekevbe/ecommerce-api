@@ -73,7 +73,7 @@ class CartAdmin(admin.ModelAdmin):
         "cart_total",
         "cart_item_count",
     )
-    ordering = ("date_ordered",)
+    ordering = ("-date_ordered",)
 
 
 @admin.register(CartItem)

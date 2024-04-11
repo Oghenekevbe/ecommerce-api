@@ -6,17 +6,19 @@ from rest_framework.response import Response
 from rest_framework.decorators import APIView
 from store.models import Cart
 from store.serializers import CartSerializer
+from .serializers import PaymentSerializer
 import requests
 import math
 import random
+import hashlib
+import json
 
 # Create your views here.
 
 
 class OrderPayment(APIView):
-
-    permission_classes = [permissions.IsAuthenticated]
     model = Cart
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -27,10 +29,30 @@ class OrderPayment(APIView):
         print("mode of payment: ", data.get("mode_of_payment"))
         if data.get("mode_of_payment") == "flutterwave":
             pay_with_flutterwave(order)
-            return Response({"message": "You will be redirected to flutterwave site"})
+            serializer = PaymentSerializer(data=data)
+            return Response(f"Redirecting you to {data.get("mode_of_payment")}'s payment portal")
+        
         elif data.get("mode_of_payment") == "paystack":
             pay_with_paystack(order)
-            return Response({"message": "You will be redirected to paystack site"})
+            serializer = PaymentSerializer(data=data)
+            return Response(f"Redirecting you to {data.get("mode_of_payment")}'s payment portal")
+        
+        elif data.get("mode_of_payment") == "remita":
+            pay_with_remita(order)
+            
+            serializer = PaymentSerializer(data=data)
+            return Response(f"Redirecting you to {data.get("mode_of_payment")}'s payment portal")
+        
+        else:
+            return Response(
+                {"error": "Invalid payment mode"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_object(self, user):
         return get_object_or_404(self.model, is_active=True, user=user)
@@ -112,6 +134,61 @@ def pay_with_paystack(order):
     else:
         return JsonResponse({"error": "Failed to initialize payment"}, status=400)
 
+
+
+
+
+def pay_with_remita(order):
+    email = order.user.email
+    amount = float(order.cart_total * 100)
+
+    orderId = (
+        str(order.order_number) + "/" + str(math.ceil(random.randint(1, 1000000)))
+    )
+    remita_url = "https://remitademo.net/remita/exapp/api/v1/send/api"
+
+
+    concatenated_values = (
+        f"{settings.REMITA_CREDENTIALS['merchantId']}"
+        f"{settings.REMITA_CREDENTIALS['serviceTypeId']}"
+        f"{orderId}"
+        f"{amount}"
+        f"{settings.REMITA_CREDENTIALS['apiKey']}"
+    )        
+    # Compute the SHA-512 hash
+    apiHash = hashlib.sha512(concatenated_values.encode()).hexdigest()
+
+    print('api hash: ', apiHash)
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"remitaConsumerKey={settings.REMITA_CREDENTIALS['merchantId']},remitaConsumerToken={apiHash}"
+    }
+
+
+    payload = { 
+        "serviceTypeId": "4430731",
+        "amount": amount,
+        "orderId": orderId,
+        "payerName": str(order.order_number),
+        "payerEmail": email,
+        "payerPhone": "",
+        "description": "Payment for " + str(order.order_number)
+    }
+
+    print('payload = ', payload)
+
+    response = requests.post(remita_url, json=payload, headers=headers)
+    try:
+        response_json = response.json()
+        if response.status_code == 200:
+            print("Payment successful. Response:", response_json)
+        else:
+            print("Failed to make payment. Status code:", response.status_code)
+            print("Response:", response_json)
+    except json.JSONDecodeError as e:
+        print("Error decoding JSON response:", e)
+        print("Response content:", response.content)
 
 class orderCompletedView(APIView):
     serializer_class = CartSerializer

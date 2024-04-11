@@ -6,6 +6,7 @@ from store.models import Cart
 PAYMENT_CHOICES = (
     ("flutterwave", "Flutterwave"),
     ("paystack", "Paystack"),
+    ("remita", "Remita"),
 )
 
 
@@ -16,4 +17,4 @@ class PaymentModel(models.Model):
     )
 
     def __str__(self):
-        return f"{self.cart.user} - {self.cart.order_number} - {self.mode_of_payment}"
+        return f"{self.order.user} - {self.order.order_number} - {self.mode_of_payment}"
