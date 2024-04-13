@@ -145,7 +145,7 @@ def pay_with_remita(order):
     orderId = (
         str(order.order_number) + "/" + str(math.ceil(random.randint(1, 1000000)))
     )
-    remita_url = "https://remitademo.net/remita/exapp/api/v1/send/api"
+    remita_url = "https://remitademo.net/remita/exapp/api/v1/send/api/echannelsvc/merchant/api/paymentinit"
 
 
     concatenated_values = (
