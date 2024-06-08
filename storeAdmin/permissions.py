@@ -1,0 +1,13 @@
+from django.contrib.auth.mixins import UserPassesTestMixin
+
+
+
+
+class IsStaffMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_staff
+
+
+class IsAdminMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser

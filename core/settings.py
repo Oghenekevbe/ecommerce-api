@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     "rest_framework",
     # apps
     "store",
+    "storeAdmin",
+    "storeSellers",
     "user",
     "paymentapp",
 ]
@@ -94,12 +96,20 @@ FLUTTERWAVE_SECRET_KEY = config("FLUTTERWAVE_SECRET_KEY")
 # PAYSTACK SECRET KEY
 PAYSTACK_KEY = config("PAYSTACK_KEY")
 
+#PAYPAL
+PAYPAL_Client_ID = config('PAYPAL_Client_ID')
+PAYPAL_SECRET_KEY = config('PAYPAL_SECRET_KEY')
+
+
+#REMITA CREDENTIALS
+
 REMITA_CREDENTIALS = {
-    "merchantId": config("MERCHANT_ID"),
     "apiKey": config("API_KEY"),
     "serviceTypeId": config("SERVICE_TYPE_ID"),
     "secretKey": config("REMITA_SECRET_KEY"),  # Accessing the Remita-related secret key
 }
+
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -136,19 +146,34 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     },
+
+ 
+# }
+
+
+
+# Replace the DATABASES section of your settings.py with this
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
-
-
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+  'default': {
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': config('PGDATABASE'),
+    'USER': config('PGUSER'),
+    'PASSWORD': config('PGPASSWORD'),
+    'HOST': config('PGHOST'),
+    'PORT': config('PGPORT', 5432),
+    'OPTIONS': {
+      'sslmode': 'require',
     },
+  },
+
 }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -191,3 +216,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = 'obawebdev'
+AWS_S3_SIGNATURE_NAME = 's3v4'
+AWS_S3_REGION_NAME = 'us-east-1'
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+AWS_S3_VERIFY = True
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3boto3Storage'

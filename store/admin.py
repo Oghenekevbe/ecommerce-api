@@ -2,7 +2,6 @@ from django.contrib import admin
 from .models import (
     Product,
     Category,
-    Seller,
     BillingAddress,
     Cart,
     CartItem,
@@ -42,9 +41,6 @@ class CategoryAdmin(admin.ModelAdmin):
     ]
 
 
-@admin.register(Seller)
-class SellerAdmin(admin.ModelAdmin):
-    list_display = ("company_name", "user", "address", "phone_number")
 
 
 @admin.register(BillingAddress)

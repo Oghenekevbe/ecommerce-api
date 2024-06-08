@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from .models import (
-    Category,
     Product,
     Promotion,
     Review,
-    Seller,
     Cart,
     CartItem,
     BillingAddress,
 )
+from storeSellers.models import Seller
+from storeAdmin.serializers import SellerSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -66,24 +66,12 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = "__all__"
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "email", "username"]
 
-
-class SellerSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
-    class Meta:
-        model = Seller
-        fields = ["id", "user", "company_name", "address", "phone_number"]
 
 
 class BillingAddressSerializer(serializers.ModelSerializer):

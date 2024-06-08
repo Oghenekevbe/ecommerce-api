@@ -30,29 +30,36 @@ class OrderPayment(APIView):
         if data.get("mode_of_payment") == "flutterwave":
             pay_with_flutterwave(order)
             serializer = PaymentSerializer(data=data)
-            return Response(f"Redirecting you to {data.get("mode_of_payment")}'s payment portal")
+            response = {
+                'data' : serializer.data,
+                'message' : f"Redirecting you to {data.get("mode_of_payment")}'s payment portal"
+            }
+            return Response(data = response, status=status.HTTP_200_OK)
         
         elif data.get("mode_of_payment") == "paystack":
             pay_with_paystack(order)
             serializer = PaymentSerializer(data=data)
-            return Response(f"Redirecting you to {data.get("mode_of_payment")}'s payment portal")
+            response = {
+                'data' : serializer.data,
+                'message' : f"Redirecting you to {data.get("mode_of_payment")}'s payment portal"
+            }
+            return Response(data = response, status=status.HTTP_200_OK)
         
         elif data.get("mode_of_payment") == "remita":
             pay_with_remita(order)
             
             serializer = PaymentSerializer(data=data)
-            return Response(f"Redirecting you to {data.get("mode_of_payment")}'s payment portal")
+            response = {
+                'data' : serializer.data,
+                'message' : f"Redirecting you to {data.get("mode_of_payment")}'s payment portal"
+            }
+            return Response(data = response, status=status.HTTP_200_OK)
         
         else:
             return Response(
                 {"error": "Invalid payment mode"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_object(self, user):
         return get_object_or_404(self.model, is_active=True, user=user)
@@ -189,6 +196,58 @@ def pay_with_remita(order):
     except json.JSONDecodeError as e:
         print("Error decoding JSON response:", e)
         print("Response content:", response.content)
+
+
+
+
+def pay_with_paypal(order):
+    email = order.user.email
+    amount = float(order.cart_total * 100)
+    address = order.address.get(is_billing_address = True)
+
+    orderId = (
+        str(order.order_number) + "/" + str(math.ceil(random.randint(1, 1000000)))
+    )
+
+
+    payment_url = 'https://api-m.sandbox.paypal.com/v2/checkout/orders'
+    headers = {
+        'Content-Type': 'application/json',
+        'PayPal-Request-Id': str(order.order_number),
+        'Authorization': f'Basic {settings.PAYPAL_Client_ID}',
+    }
+
+    data = { 
+        "intent": "CAPTURE",
+        "purchase_units": [
+            {
+                "reference_id": "d9f80740-38f0-11e8-b467-0ed5f89f718b",
+                "amount": {
+                    "currency_code": "USD",
+                    "value": amount
+                }
+            }
+        ],
+        "payment_source": {
+            "paypal": {
+                "experience_context": {
+                    "payment_method_preference": "IMMEDIATE_PAYMENT_REQUIRED",
+                    "brand_name": "E-commerce Online Shopping",
+                    "locale": "en-US",
+                    "landing_page": "",
+                    "shipping_preference": address,
+                    "user_action": "PAY_NOW",
+                    "return_url": f"https://api-m.paypal.com/v2/checkout/orders/{orderId}/capture",
+                    "cancel_url": ""
+                }
+            }
+        }
+    }
+
+
+    response = requests.post(payment_url, headers=headers, json=data)
+
+
 
 class orderCompletedView(APIView):
     serializer_class = CartSerializer

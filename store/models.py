@@ -4,25 +4,11 @@ from django.core.validators import MaxValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 import uuid
+from storeSellers.models import Seller
 
 User = get_user_model()
 
 # Create your models here.
-
-CURRENCY_CHOICES = (
-    ("USD", "United States Dollar"),
-    ("NGN", "Nigerian Naira"),
-    ("EUR", "Euro"),
-    ("GBP", "British Pound Sterling"),
-    ("GHS", "Ghanaian Cedi"),
-    ("KES", "Kenyan Shilling"),
-    ("ZAR", "South African Rand"),
-    ("UGX", "Ugandan Shilling"),
-    ("CAD", "Canadian Dollar"),
-    ("AUD", "Australian Dollar"),
-    ("JPY", "Japanese Yen"),
-    ("INR", "Indian Rupee"),
-)
 
 
 class Product(models.Model):
@@ -48,10 +34,10 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     category = models.ForeignKey("Category", on_delete=models.CASCADE)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    image = models.ImageField(upload_to="product_images/", blank=True, null=True)
+    image = models.ImageField(upload_to="product_images/", blank=True, null=True, default = 'static/default_image.PNG')
     is_available = models.BooleanField(default=True)
     discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, null=True)
+    currency = models.CharField(max_length=3, default= 'USD', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -68,7 +54,7 @@ class Product(models.Model):
     )
 
     # User association (e.g., creator or owner)
-    seller = models.ForeignKey("Seller", on_delete=models.CASCADE, null=True)
+    seller = models.ForeignKey(Seller, on_delete=models.CASCADE, null=True)
 
     @property
     def discounted_price(self):
@@ -161,17 +147,6 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class Seller(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    company_name = models.CharField(max_length=255)
-    address = models.TextField()
-    phone_number = models.CharField(max_length=15)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.company_name
 
 
 class BillingAddress(models.Model):
