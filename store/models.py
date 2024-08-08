@@ -172,31 +172,26 @@ class BillingAddress(models.Model):
             return "No Billing Address"
 
 
-ORDER_STATUS_CHOICES = (
-    ("unconfirmed", "Unconfirmed"),
-    ("confirmed", "Confirmed"),
-    ("shipped", "Shipped"),
-    ("delivered", "Delivered"),
-    ("returned", "Returned"),
-)
+
+class OrderStatus(models.Model):
+    completed = models.BooleanField(default=False)
+    delivered = models.BooleanField(default=False)
+    returned = models.BooleanField(default=False)
+    confirmed = models.BooleanField(default=False)
+    shipped = models.BooleanField(default=False)
+    processing = models.BooleanField(default=False)
+    canceled = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"OrderStatus({self.pk})"
 
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    address = models.ForeignKey(
-        BillingAddress,
-        related_name="billing_address",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-    )
+    order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     date_ordered = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=20, choices=ORDER_STATUS_CHOICES, null=True, default="unconfirmed"
-    )
-    order_number = models.UUIDField(
-        default=uuid.uuid4, primary_key=True, editable=False
-    )
+    address = models.ForeignKey(BillingAddress, related_name="billing_address", on_delete=models.CASCADE, null=True, blank=True)
+    status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -213,13 +208,6 @@ class Cart(models.Model):
         return self.cart_items.count()
 
 
-ORDER_ITEM_STATUS_CHOICES = (
-    ("unconfirmed", "Unconfirmed"),
-    ("confirmed", "Confirmed"),
-    ("shipped", "Shipped"),
-    ("delivered", "Delivered"),
-    ("returned", "Returned"),
-)
 
 
 class CartItem(models.Model):
@@ -227,12 +215,7 @@ class CartItem(models.Model):
     order = models.ForeignKey(Cart, related_name="cart_items", on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     date_ordered = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=20,
-        choices=ORDER_ITEM_STATUS_CHOICES,
-        null=True,
-        default="Unconfirmed",
-    )
+    status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         if self.product:
@@ -252,10 +235,3 @@ class CartItem(models.Model):
         return total
 
 
-class Return(models.Model):
-    order = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    returned_item = models.CharField(
-        max_length=50
-    )  # Assuming some identifier for the returned item
-    return_reason = models.TextField()
-    return_date = models.DateField()
