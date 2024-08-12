@@ -1,3 +1,14 @@
 .env
 /venv
 /migrations
+# Ignore __pycache__ directories
+__pycache__/
+
+# Ignore .pyc files
+*.pyc
+
+# Ignore .pyo files (optional, for Python optimized bytecode)
+*.pyo
+
+# Ignore .pyd files (optional, for Python dynamic modules)
+*.pyd

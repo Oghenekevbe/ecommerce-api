@@ -13,7 +13,7 @@ from .permissions import IsSellerMixin
 from store.serializers import (
     ProductSerializer, CartItemSerializer
 )
-
+from services import service_responses as sr
 
 
 
@@ -50,7 +50,7 @@ class ProductCreateView(generics.ListCreateAPIView, IsSellerMixin):
         return super().create(request, *args, **kwargs)
 
 
-class SellerOrdersAPIView(APIView, IsSellerMixin):
+class SellerOrdersAPIView(generics.GenericAPIView, IsSellerMixin):
     @swagger_auto_schema(
         tags=["Seller"],
         operation_summary="Get Seller Orders",
@@ -62,6 +62,6 @@ class SellerOrdersAPIView(APIView, IsSellerMixin):
         seller = request.user.seller
         seller_orders = CartItem.objects.filter(product__seller=seller).distinct()
         serializer = CartItemSerializer(seller_orders, many=True)
-        return Response(serializer.data)
+        return sr.accepted_response(data=serializer.data)
 
 

@@ -471,7 +471,7 @@ from rest_framework import status
 
 User = get_user_model()
 
-class ProductSearch(generics.GenericApiView):
+class ProductSearch(generics.GenericAPIView):
     serializer_class = ProductSerializer
 
     def get(self, request):
@@ -491,7 +491,7 @@ class ProductSearch(generics.GenericApiView):
 
         return sr.error_response("Missing or empty query parameters")
 
-class ProductView(generics.GenericApiView):
+class ProductView(generics.GenericAPIView):
     serializer_class = ProductSerializer
 
     @swagger_auto_schema(
@@ -514,7 +514,7 @@ class ProductView(generics.GenericApiView):
             serializer = self.serializer_class(instance=products, many=True)
             return sr.success_response(serializer.data)
 
-class ReviewView(generics.GenericApiView):
+class ReviewView(generics.GenericAPIView):
     serializer_class = ReviewSerializer
 
     @swagger_auto_schema(
@@ -601,7 +601,7 @@ class ReviewView(generics.GenericApiView):
         return sr.no_content_response()
 
 
-class CartView(generics.GenericApiView):
+class CartView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CartSerializer
 
@@ -643,7 +643,7 @@ class CartView(generics.GenericApiView):
             return sr.accepted_response(serializer.data)
         return sr.error_response(serializer.errors)
 
-class CartItemView(generics.GenericApiView):
+class CartItemView(generics.GenericAPIView):
     serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticated]
 
@@ -717,7 +717,7 @@ class CartItemView(generics.GenericApiView):
         cart_item.delete()
         return sr.no_content_response()
     
-class CartHistory(generics.GenericApiView):
+class CartHistory(generics.GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 

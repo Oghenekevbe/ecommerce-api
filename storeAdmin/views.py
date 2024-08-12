@@ -2,32 +2,19 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
+from services import service_responses as sr
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from store.models import (
-    Product,
-    BillingAddress,
-    Cart,
-    CartItem,
-    Promotion,
-)
+from store.models import (Product,BillingAddress,Cart,CartItem, Promotion)
 from storeSellers.models import Seller
 from storeAdmin.serializers import SellerSerializer
 from store.models import Category
 
 from .permissions import IsStaffMixin, IsAdminMixin
 from .serializers import CategorySerializer
-from store.serializers import (
-    ProductSerializer,
-    BillingAddressSerializer,
-    CartItemSerializer,
-    CartSerializer,
-    PromotionSerializer,
-    
-)
-
-from user.serializers import UserSerializer
+from store.serializers import (ProductSerializer,BillingAddressSerializer,CartItemSerializer,CartSerializer,PromotionSerializer,)
+from users.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 
 
@@ -41,7 +28,131 @@ CATEGORY APIS
 """
 
 
-class CategoryCreateView(APIView):
+# class CategoryCreateView(APIView):
+#     serializer_class = CategorySerializer
+
+#     @swagger_auto_schema(
+#         request_body=openapi.Schema(
+#             type=openapi.TYPE_OBJECT,
+#             properties={
+#                 "name": openapi.Schema(
+#                     type=openapi.TYPE_STRING, description="Name of the category"
+#                 ),
+#                 "description": openapi.Schema(
+#                     type=openapi.TYPE_STRING, description="Description of the category"
+#                 ),
+#             },
+#             required=["name"],
+#         ),
+#         responses={
+#             201: openapi.Response("Category successfully created", CategorySerializer),
+#             400: "Invalid input data",
+#         },
+#         tags=["Categories"],
+#         operation_summary="Create a category",
+#     )
+#     def post(self, request):
+#         data = request.data
+#         serializer = self.serializer_class(data=data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             response = {
+#                 "message": "Category successfully created",
+#                 "data": serializer.data,
+#             }
+#             return Response(data=response, status=status.HTTP_201_CREATED)
+
+#         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class CategoryListView(APIView):
+#     serializer_class = CategorySerializer
+
+#     @swagger_auto_schema(
+#         responses={
+#             200: openapi.Response("List of categories", CategorySerializer(many=True)),
+#         },
+#         tags=["Categories"],
+#         operation_summary="Get a list of all categories",
+#     )
+#     def get(self, request, *args, **kwargs):
+#         categories = Category.objects.all()
+#         serializer = self.serializer_class(instance=categories, many=True)
+#         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+# class CategoryDetailView(APIView):
+#     serializer_class = CategorySerializer
+
+#     @swagger_auto_schema(
+#         responses={
+#             200: openapi.Response("Details of a category", CategorySerializer),
+#             404: "Category not found",
+#         },
+#         tags=["Categories"],
+#         operation_summary="Get details of a specific category",
+#     )
+#     def get(self, request, pk):
+#         category = get_object_or_404(Category, pk=pk)
+#         serializer = self.serializer_class(instance=category)
+#         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+# class CategoryUpdateView(APIView, IsStaffMixin, IsAdminMixin):
+#     serializer_class = CategorySerializer
+
+#     @swagger_auto_schema(
+#         request_body=openapi.Schema(
+#             type=openapi.TYPE_OBJECT,
+#             properties={
+#                 "name": openapi.Schema(
+#                     type=openapi.TYPE_STRING, description="Updated name of the category"
+#                 ),
+#                 "description": openapi.Schema(
+#                     type=openapi.TYPE_STRING, description="Updated description"
+#                 ),
+#             },
+#         ),
+#         responses={
+#             200: openapi.Response("Category successfully updated", CategorySerializer),
+#             400: "Invalid input data",
+#             404: "Category not found",
+#         },
+#         tags=["Categories"],
+#         operation_summary="Update a specific category",
+#     )
+#     def put(self, request, pk):
+#         category = get_object_or_404(Category, pk=pk)
+#         data = request.data
+#         serializer = self.serializer_class(instance=category, data=data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             response = {
+#                 "message": "Category successfully updated",
+#                 "data": serializer.data,
+#             }
+#             return Response(data=response, status=status.HTTP_200_OK)
+
+#         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class CategoryDeleteView(APIView, IsStaffMixin, IsAdminMixin):
+#     @swagger_auto_schema(
+#         responses={
+#             204: "Category successfully deleted",
+#             404: "Category not found",
+#         },
+#         tags=["Categories"],
+#         operation_summary="Delete a specific category",
+#     )
+#     def delete(self, request, pk):
+#         category = get_object_or_404(Category, pk=pk)
+#         category.delete()
+
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class CategoryListCreateView(generics.ListCreateAPIView):
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
     @swagger_auto_schema(
@@ -64,22 +175,14 @@ class CategoryCreateView(APIView):
         tags=["Categories"],
         operation_summary="Create a category",
     )
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = request.data
-        serializer = self.serializer_class(data=data)
+        serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            response = {
-                "message": "Category successfully created",
-                "data": serializer.data,
-            }
-            return Response(data=response, status=status.HTTP_201_CREATED)
-
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CategoryListView(APIView):
-    serializer_class = CategorySerializer
+            return sr.created_response(serializer.data, status.HTTP_201_CREATED)
+        
+        return sr.error_response(serializer.errors)
 
     @swagger_auto_schema(
         responses={
@@ -89,12 +192,11 @@ class CategoryListView(APIView):
         operation_summary="Get a list of all categories",
     )
     def get(self, request, *args, **kwargs):
-        categories = Category.objects.all()
-        serializer = self.serializer_class(instance=categories, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return super().get(request, *args, **kwargs)
 
 
-class CategoryDetailView(APIView):
+class CategoryRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView, IsStaffMixin, IsAdminMixin):
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
     @swagger_auto_schema(
@@ -105,14 +207,8 @@ class CategoryDetailView(APIView):
         tags=["Categories"],
         operation_summary="Get details of a specific category",
     )
-    def get(self, request, pk):
-        category = get_object_or_404(Category, pk=pk)
-        serializer = self.serializer_class(instance=category)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-
-class CategoryUpdateView(APIView, IsStaffMixin, IsAdminMixin):
-    serializer_class = CategorySerializer
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -134,22 +230,9 @@ class CategoryUpdateView(APIView, IsStaffMixin, IsAdminMixin):
         tags=["Categories"],
         operation_summary="Update a specific category",
     )
-    def put(self, request, pk):
-        category = get_object_or_404(Category, pk=pk)
-        data = request.data
-        serializer = self.serializer_class(instance=category, data=data)
-        if serializer.is_valid():
-            serializer.save()
-            response = {
-                "message": "Category successfully updated",
-                "data": serializer.data,
-            }
-            return Response(data=response, status=status.HTTP_200_OK)
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
 
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CategoryDeleteView(APIView, IsStaffMixin, IsAdminMixin):
     @swagger_auto_schema(
         responses={
             204: "Category successfully deleted",
@@ -158,68 +241,110 @@ class CategoryDeleteView(APIView, IsStaffMixin, IsAdminMixin):
         tags=["Categories"],
         operation_summary="Delete a specific category",
     )
-    def delete(self, request, pk):
-        category = get_object_or_404(Category, pk=pk)
-        category.delete()
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+# class OrdersView(APIView, IsStaffMixin, IsAdminMixin):
+#     serializer_class = CartSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     @swagger_auto_schema(
+#         operation_summary="Retrieve details of all orders by customers",
+#         operation_description="This endpoint returns details of orders.",
+#         responses={status.HTTP_200_OK: CartItemSerializer},
+#         tags=["Cart"],
+#     )
+#     def get(self, request):
+#         orders = Cart.objects.all()
+#         serializer = self.serializer_class(orders, many=True)
+
+#         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
+# class OrderDetailView(APIView, IsStaffMixin, IsAdminMixin):
+#     serializer_class = CartSerializer
+#     permission_classes = [IsAuthenticated]
 
-class OrdersView(APIView, IsStaffMixin, IsAdminMixin):
+#     @swagger_auto_schema(
+#         operation_summary="Retrieve details of specific orders by customers",
+#         operation_description="This endpoint returns details of specific orders for the admin.",
+#         responses={status.HTTP_200_OK: CartItemSerializer},
+#         tags=["Cart"],
+#     )
+#     def get(self, request, pk):
+#         order = get_object_or_404(Cart, pk=pk)
+#         serializer = self.serializer_class(order)
+
+#         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+# class AdminOrderUpdateDeleteView(APIView, IsAdminMixin):
+#     serializer_class = CartSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     @swagger_auto_schema(
+#         operation_summary="Retrieve details of specific orders by customers",
+#         operation_description="This endpoint returns details of specific orders for the admin.",
+#         responses={status.HTTP_200_OK: CartItemSerializer},
+#         tags=["Cart"],
+#     )
+#     def put(self, request, pk):
+#         data = request.data
+#         order = get_object_or_404(Cart, pk=pk)
+#         serializer = self.serializer_class(data, order)
+#         if serializer.is_valid():
+#             serializer.save()
+
+#             return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderView(generics.GenericAPIView, IsStaffMixin, IsAdminMixin):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_summary="Retrieve details of all orders by customers",
-        operation_description="This endpoint returns details of orders.",
-        responses={status.HTTP_200_OK: CartItemSerializer},
+        operation_summary="Retrieve orders",
+        operation_description="Lists all orders or retrieves a specific order.",
+        responses={
+            status.HTTP_200_OK: CartSerializer(many=True),
+            status.HTTP_404_NOT_FOUND: "Order not found"
+        },
         tags=["Cart"],
     )
-    def get(self, request):
-        orders = Cart.objects.all()
-        serializer = self.serializer_class(orders, many=True)
-
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-
-class OrderDetailView(APIView, IsStaffMixin, IsAdminMixin):
-    serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_summary="Retrieve details of specific orders by customers",
-        operation_description="This endpoint returns details of specific orders for the admin.",
-        responses={status.HTTP_200_OK: CartItemSerializer},
-        tags=["Cart"],
-    )
-    def get(self, request, pk):
-        order = get_object_or_404(Cart, pk=pk)
-        serializer = self.serializer_class(order)
-
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-
-class AdminOrderUpdateDeleteView(APIView, IsAdminMixin):
-    serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
+    def get(self, request, pk=None):
+        if pk:
+            # Retrieve a specific order
+            order = get_object_or_404(Cart, pk=pk)
+            serializer = self.serializer_class(order)
+            return sr.success_response(serializer.data)
+        else:
+            # List all orders
+            orders = Cart.objects.all()
+            serializer = self.serializer_class(orders, many=True)
+            return sr.success_response(serializer.data)
 
     @swagger_auto_schema(
-        operation_summary="Retrieve details of specific orders by customers",
-        operation_description="This endpoint returns details of specific orders for the admin.",
-        responses={status.HTTP_200_OK: CartItemSerializer},
+        operation_summary="Update or delete a specific order",
+        operation_description="Allows updating or deleting a specific order.",
+        responses={
+            status.HTTP_202_ACCEPTED: CartSerializer,
+            status.HTTP_400_BAD_REQUEST: "Invalid input data",
+            status.HTTP_404_NOT_FOUND: "Order not found",
+        },
         tags=["Cart"],
     )
     def put(self, request, pk):
-        data = request.data
         order = get_object_or_404(Cart, pk=pk)
-        serializer = self.serializer_class(data, order)
+        serializer = self.serializer_class(order, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            return sr.accepted_response(serializer.data)
+        return sr.error_response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
-            return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    def delete(self, request, pk):
+        order = get_object_or_404(Cart, pk=pk)
+        order.delete()
+        return sr.no_content_response()
 
 class AdminUpdateDeleteCartItem(APIView, IsAdminMixin):
     serializer_class = CartItemSerializer
@@ -234,7 +359,7 @@ class AdminUpdateDeleteCartItem(APIView, IsAdminMixin):
         order = get_object_or_404(Cart, pk=cart_pk)
         cart_item = get_object_or_404(CartItem, order=order, pk=pk)
         serializer = self.serializer_class(cart_item)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return sr.success_response(data=serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Update a specific cart item",
@@ -250,24 +375,26 @@ class AdminUpdateDeleteCartItem(APIView, IsAdminMixin):
     def put(self, request, cart_pk, pk):
         order = get_object_or_404(Cart, pk=cart_pk)
         cart_item = get_object_or_404(CartItem, order=order, pk=pk)
-        serializer = self.serializer_class(cart_item, data=request.data)
+        serializer = self.serializer_class(cart_item, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save(partial=True)
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            return sr.success_response(serializer.data, status.HTTP_200_OK)
+        return sr.error_response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         operation_summary="Delete a specific cart item",
         operation_description="This endpoint deletes a specific cart item identified by its primary key.",
-        responses={status.HTTP_204_NO_CONTENT: "Cart item successfully deleted"},
+        responses={
+            status.HTTP_204_NO_CONTENT: sr.no_content_response(),
+            status.HTTP_404_NOT_FOUND: sr.error_response("Cart or Cart item not found"),
+        },
         tags=["Cart"],
     )
     def delete(self, request, cart_pk, pk):
         order = get_object_or_404(Cart, pk=cart_pk)
         cart_item = get_object_or_404(CartItem, order=order, pk=pk)
         cart_item.delete()
-        response = {"message": "Cart item successfully deleted"}
-        return Response(data=response, status=status.HTTP_204_NO_CONTENT)
+        return sr.no_content_response()
 
 
 class PromotionListCreateAPIView(generics.ListCreateAPIView, IsAdminMixin):
