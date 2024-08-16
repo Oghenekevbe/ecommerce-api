@@ -40,18 +40,18 @@
 # ]
 
 
-from dj_rest_auth.registration.views import RegisterView, VerifyEmailView, ResendEmailVerificationView
+from dj_rest_auth.registration.views import RegisterView, VerifyEmailView
+from .views import ResendVerifyEmail
 from dj_rest_auth.views import LoginView, LogoutView, UserDetailsView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView
 from django.urls import path
 from users.views import email_confirm_redirect, password_reset_confirm_redirect
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="rest_register"),  # Handles user registration.
-    
     path('account-email-verification-sent/', VerifyEmailView.as_view(), name='account_email_verification_sent'),  # Shows a confirmation page or message after the user has successfully requested email verification.
     path("account-confirm-email/<str:key>/", email_confirm_redirect, name="account_confirm_email"),  # Handles email verification when the user clicks the verification link in their email.
     path("register/verify-email/", VerifyEmailView.as_view(), name="rest_verify_email"),  # Provides an endpoint for the email verification process. It should match the URL used in the verification email sent to users.
-    path("register/resend-email/", ResendEmailVerificationView.as_view(), name="rest_resend_email"),  # Allows users to request a new verification email if they didn't receive the initial one or if it expired.
+    path("register/resend-email/", ResendVerifyEmail.as_view(), name="rest_resend_email"),  # Allows users to request a new verification email if they didn't receive the initial one or if it expired.
 
     path("login/", LoginView.as_view(), name="rest_login"),  # Handles user login.
     path("logout/", LogoutView.as_view(), name="rest_logout"),  # Handles user logout.
