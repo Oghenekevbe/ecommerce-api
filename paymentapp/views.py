@@ -65,45 +65,6 @@ class OrderPayment(APIView):
         return get_object_or_404(self.model, is_active=True, user=user)
 
 
-def pay_with_flutterwave(order):
-    url = "https://api.flutterwave.com/v3/payments"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}",
-    }
-
-    reference = (
-        str(order.order_number) + "/" + str(math.ceil(random.randint(1, 1000000)))
-    )
-
-    payload = {
-        "tx_ref": reference,
-        "amount": float(order.cart_total),
-        "currency": order.cart_items.first().product.currency,
-        "redirect_url": "http://127.0.0.1:8000/api/payment_completed/",
-        "payment_options": "card",
-        "meta": {"source": "docs-inline-test", "consumer_mac": "92a3-912ba-1192a"},
-        "customer": {
-            "email": order.user.email,
-            "phone_number": "08100000000",
-            "name": order.user.username,
-        },
-        "customizations": {
-            "title": "E-commerce Online Shopping",
-            "description": "Payment for " + str(order.order_number),
-            "logo": "https://checkout.flutterwave.com/assets/img/rave-logo.png",
-        },
-    }
-    print("payload:  ", payload)
-    response = requests.post(url, json=payload, headers=headers)
-
-    if response.status_code == 200:
-        payment_response = response.json()
-        print("Payment successful!")
-        print("Payment details:", payment_response)
-    else:
-        print("Failed to make payment. Status code:", response.status_code)
-
 
 def pay_with_paystack(order):
     email = order.user.email
