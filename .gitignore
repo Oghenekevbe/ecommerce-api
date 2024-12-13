@@ -12,3 +12,5 @@ __pycache__/
 
 # Ignore .pyd files (optional, for Python dynamic modules)
 *.pyd
+
+todo.txt

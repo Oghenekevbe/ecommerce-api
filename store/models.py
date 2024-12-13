@@ -37,7 +37,7 @@ class Product(models.Model):
     image = models.ImageField(upload_to="product_images/", blank=True, null=True, default = 'static/default_image.PNG')
     is_available = models.BooleanField(default=True)
     discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, default= 'USD', null=True)
+    currency = models.CharField(max_length=3, default= 'NGN', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -167,17 +167,6 @@ class BillingAddress(models.Model):
 
 
 
-class OrderStatus(models.Model):
-    completed = models.BooleanField(default=False)
-    delivered = models.BooleanField(default=False)
-    returned = models.BooleanField(default=False)
-    confirmed = models.BooleanField(default=False)
-    shipped = models.BooleanField(default=False)
-    processing = models.BooleanField(default=False)
-    canceled = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"OrderStatus({self.pk})"
 
 
 class Cart(models.Model):
@@ -185,7 +174,7 @@ class Cart(models.Model):
     order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     date_ordered = models.DateTimeField(auto_now_add=True)
     address = models.ForeignKey(BillingAddress, related_name="billing_address", on_delete=models.CASCADE, null=True, blank=True)
-    status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
+    status = models.ForeignKey('OrderStatus', on_delete=models.SET_NULL, null=True, related_name='cart_status')
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -209,7 +198,7 @@ class CartItem(models.Model):
     order = models.ForeignKey(Cart, related_name="cart_items", on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     date_ordered = models.DateTimeField(auto_now_add=True)
-    status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
+    status = models.ForeignKey('OrderStatus', on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         if self.product:
@@ -229,3 +218,14 @@ class CartItem(models.Model):
         return total
 
 
+class OrderStatus(models.Model):
+    completed = models.BooleanField(default=False)
+    delivered = models.BooleanField(default=False)
+    returned = models.BooleanField(default=False)
+    confirmed = models.BooleanField(default=False)
+    shipped = models.BooleanField(default=False)
+    processing = models.BooleanField(default=False)
+    canceled = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.cart.order_number} OrderStatus({self.pk})"
