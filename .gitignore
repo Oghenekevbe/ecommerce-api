@@ -34,3 +34,4 @@ settings_local.py
 # Optional: Ignore todo.txt if personal
 todo.txt
 venv/pyvenv.cfg
+venv/pyvenv.cfg
