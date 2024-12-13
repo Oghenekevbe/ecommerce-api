@@ -1,16 +1,36 @@
+# Virtual environment
 .env
 /venv
-/migrations
-# Ignore __pycache__ directories
+venv/
+venv
+pyvenv.cfg
+
+# Django migrations
+*/migrations/__pycache__/
+*.py[cod]
+
+# Bytecode
 __pycache__/
-
-# Ignore .pyc files
 *.pyc
-
-# Ignore .pyo files (optional, for Python optimized bytecode)
 *.pyo
-
-# Ignore .pyd files (optional, for Python dynamic modules)
 *.pyd
 
+# Temporary/Backup Files
+*.bak
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE files
+.vscode/
+.idea/
+
+# Local settings and secrets
+settings_local.py
+.env
+
+# Optional: Ignore todo.txt if personal
 todo.txt
+venv/pyvenv.cfg
