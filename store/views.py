@@ -160,7 +160,7 @@ class CartView(generics.GenericAPIView):
             200: openapi.Response("Cart details", CartSerializer),
             404: "Cart not found",
         },
-        tags=["Cart"],
+        tags=["Store"],
         operation_summary="Get the cart and all the items in it",
     )
     def get(self, request):
@@ -181,7 +181,7 @@ class CartView(generics.GenericAPIView):
             202: openapi.Response("Cart updated successfully", CartSerializer),
             400: "Invalid input data",
         },
-        tags=["Cart"],
+        tags=["Store"],
         operation_summary="Update the cart address",
     )
     def put(self, request):
@@ -199,7 +199,7 @@ class CartItemView(generics.GenericAPIView):
     queryset = CartItem.objects.all()
 
     @swagger_auto_schema(
-        tags=["Cart"],
+        tags=["Store"],
         operation_summary="Retrieve cart items for the current user",
         operation_description="This endpoint retrieves the cart items for the current user.",
         responses={status.HTTP_200_OK: CartItemSerializer(many=True)},
@@ -219,7 +219,7 @@ class CartItemView(generics.GenericAPIView):
             return success_response(serializer.data)
 
     @swagger_auto_schema(
-        tags=["Cart"],
+        tags=["Store"],
         operation_summary="Add a product to the cart",
         operation_description="This endpoint adds a product to the user's cart.",
         request_body=CartItemSerializer,
@@ -238,7 +238,7 @@ class CartItemView(generics.GenericAPIView):
         return error_response(serializer.errors)
 
     @swagger_auto_schema(
-        tags=["Cart"],
+        tags=["Store"],
         operation_summary="Update a specific cart item",
         request_body=CartItemSerializer,
         responses={
@@ -256,7 +256,7 @@ class CartItemView(generics.GenericAPIView):
         return error_response(serializer.errors)
 
     @swagger_auto_schema(
-        tags=["Cart"],
+        tags=["Store"],
         operation_summary="Delete a specific cart item",
         responses={
             status.HTTP_204_NO_CONTENT: "Cart item deleted successfully",
@@ -273,7 +273,7 @@ class CartHistory(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        tags=["Cart"],
+        tags=["Store"],
         operation_summary="Get inactive carts for order history",
         responses={
             status.HTTP_200_OK: CartSerializer(many=True),
