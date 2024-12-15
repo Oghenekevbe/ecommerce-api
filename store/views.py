@@ -20,7 +20,7 @@ class ProductSearch(generics.GenericAPIView):
         query_type = request.GET.get("query_type")
         query_value = request.GET.get("query_value")
 
-        if query_type and query_value:
+        if query_type or query_value:
             if query_type == "product":
                 products = Product.objects.filter(name__icontains=query_value)
             elif query_type == "category":
@@ -36,25 +36,30 @@ class ProductSearch(generics.GenericAPIView):
 class ProductView(generics.GenericAPIView):
     serializer_class = ProductSerializer
 
+    def get_queryset(self):
+        return Product.objects.all()
+
     @swagger_auto_schema(
         responses={
-            200: openapi.Response("List of products", ProductSerializer(many=True)),
-            404: "Product not found",
+            200: openapi.Response("List of products or product details", ProductSerializer(many=True)),
+            404: openapi.Response("Product not found"),
         },
-        operation_summary="Get a list of all products or details of a specific product",
+        operation_summary="Retrieve all products or a specific product by ID",
         tags=["Products"],
     )
     def get(self, request, pk=None):
         if pk:
             # Retrieve and return details of a specific product
-            product = get_object_or_404(Product, pk=pk)
+            product = get_object_or_404(self.get_queryset(), pk=pk)
             serializer = self.serializer_class(instance=product)
             return sr.success_response(serializer.data)
-        else:
-            # Retrieve and return all products
-            products = Product.objects.all()
-            serializer = self.serializer_class(instance=products, many=True)
-            return sr.success_response(serializer.data)
+        
+        # Retrieve and return all products
+        products = self.get_queryset()
+        serializer = self.serializer_class(instance=products, many=True)
+        return sr.success_response(serializer.data)
+
+
 
 class ReviewView(generics.GenericAPIView):
     serializer_class = ReviewSerializer
