@@ -1,4 +1,4 @@
-from services import service_responses as sr
+from services.service_responses import *
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, permissions
@@ -26,12 +26,12 @@ class ProductSearch(generics.GenericAPIView):
             elif query_type == "category":
                 products = Product.objects.filter(category__name__icontains=query_value)
             else:
-                return sr.error_response("Invalid query_type parameter")
+                return error_response("Invalid query_type parameter")
 
             serializer = self.serializer_class(products, many=True)
-            return sr.success_response(serializer.data)
+            return success_response(serializer.data)
 
-        return sr.error_response("Missing or empty query parameters")
+        return error_response("Missing or empty query parameters")
 
 class ProductView(generics.GenericAPIView):
     serializer_class = ProductSerializer
@@ -52,12 +52,12 @@ class ProductView(generics.GenericAPIView):
             # Retrieve and return details of a specific product
             product = get_object_or_404(self.get_queryset(), pk=pk)
             serializer = self.serializer_class(instance=product)
-            return sr.success_response(serializer.data)
+            return success_response(serializer.data)
         
         # Retrieve and return all products
         products = self.get_queryset()
         serializer = self.serializer_class(instance=products, many=True)
-        return sr.success_response(serializer.data)
+        return success_response(serializer.data)
 
 
 
@@ -86,8 +86,8 @@ class ReviewView(generics.GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return sr.created_response(serializer.data)
-        return sr.error_response(serializer.errors)
+            return created_response(serializer.data)
+        return error_response(serializer.errors)
 
     @swagger_auto_schema(
         responses={
@@ -101,14 +101,14 @@ class ReviewView(generics.GenericAPIView):
             # Retrieve and return details of a specific review
             review = get_object_or_404(Review, id=review_id)
             serializer = self.serializer_class(instance=review)
-            return sr.success_response(serializer.data)
+            return success_response(serializer.data)
         elif product_id:
             # Retrieve and return all reviews for a specific product
             reviews = Review.objects.filter(product_id=product_id)
             serializer = self.serializer_class(instance=reviews, many=True)
-            return sr.success_response(serializer.data)
+            return success_response(serializer.data)
         else:
-            return sr.error_response({"detail": "Product ID or Review ID must be provided."})
+            return error_response({"detail": "Product ID or Review ID must be provided."})
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -131,8 +131,8 @@ class ReviewView(generics.GenericAPIView):
         serializer = self.serializer_class(instance=review, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return sr.success_response(serializer.data)
-        return sr.error_response(serializer.errors)
+            return success_response(serializer.data)
+        return error_response(serializer.errors)
 
     @swagger_auto_schema(
         responses={
@@ -145,7 +145,7 @@ class ReviewView(generics.GenericAPIView):
     def delete(self, request, review_id):
         review = get_object_or_404(Review, id=review_id)
         review.delete()
-        return sr.no_content_response()
+        return no_content_response()
 
 
 
@@ -167,7 +167,7 @@ class CartView(generics.GenericAPIView):
         user = request.user
         order, created = Cart.objects.get_or_create(user=user, is_active=True)
         serializer = self.serializer_class(order)
-        return sr.success_response(serializer.data)
+        return success_response(serializer.data)
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -190,12 +190,13 @@ class CartView(generics.GenericAPIView):
         serializer = self.serializer_class(order, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return sr.accepted_response(serializer.data)
-        return sr.error_response(serializer.errors)
+            return accepted_response(serializer.data)
+        return error_response(serializer.errors)
 
 class CartItemView(generics.GenericAPIView):
     serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticated]
+    queryset = CartItem.objects.all()
 
     @swagger_auto_schema(
         tags=["Cart"],
@@ -209,13 +210,13 @@ class CartItemView(generics.GenericAPIView):
             # Retrieve a specific cart item
             cart_item = get_object_or_404(CartItem, pk=pk)
             serializer = self.serializer_class(cart_item)
-            return sr.success_response(serializer.data)
+            return success_response(serializer.data)
         else:
             # Retrieve all cart items for the user
             order, created = Cart.objects.get_or_create(user=user, is_active=True)
             cart_items = order.cart_items.all()
             serializer = self.serializer_class(cart_items, many=True)
-            return sr.success_response(serializer.data)
+            return success_response(serializer.data)
 
     @swagger_auto_schema(
         tags=["Cart"],
@@ -233,8 +234,8 @@ class CartItemView(generics.GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             item = serializer.save(cart=order)
-            return sr.created_response(CartItemSerializer(item).data)
-        return sr.error_response(serializer.errors)
+            return created_response(CartItemSerializer(item).data)
+        return error_response(serializer.errors)
 
     @swagger_auto_schema(
         tags=["Cart"],
@@ -251,8 +252,8 @@ class CartItemView(generics.GenericAPIView):
         serializer = self.serializer_class(cart_item, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return sr.accepted_response(serializer.data)
-        return sr.error_response(serializer.errors)
+            return accepted_response(serializer.data)
+        return error_response(serializer.errors)
 
     @swagger_auto_schema(
         tags=["Cart"],
@@ -265,7 +266,7 @@ class CartItemView(generics.GenericAPIView):
     def delete(self, request, pk):
         cart_item = get_object_or_404(CartItem, pk=pk)
         cart_item.delete()
-        return sr.no_content_response()
+        return no_content_response()
     
 class CartHistory(generics.GenericAPIView):
     serializer_class = CartSerializer
@@ -282,7 +283,7 @@ class CartHistory(generics.GenericAPIView):
         user = request.user
         carts = Cart.objects.filter(user=user, is_active=False)
         serializer = self.serializer_class(carts, many=True)
-        return sr.success_response(serializer.data)
+        return success_response(serializer.data)
 
 
 

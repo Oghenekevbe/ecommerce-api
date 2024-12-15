@@ -125,7 +125,7 @@ class CategoryRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView, Is
 
 
 class OrderView(generics.GenericAPIView, IsStaffMixin, IsAdminMixin):
-    # queryset = Cart.objects.all()
+    queryset = Cart.objects.all()
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
@@ -141,12 +141,12 @@ class OrderView(generics.GenericAPIView, IsStaffMixin, IsAdminMixin):
     def get(self, request, pk=None):
         if pk:
             # Retrieve a specific order
-            order = get_object_or_404(Cart, pk=pk)
+            order = get_object_or_404(self.queryset, pk=pk)
             serializer = self.serializer_class(order)
             return success_response(serializer.data)
         else:
             # List all orders
-            orders = Cart.objects.all()
+            orders = self.queryset
             serializer = self.serializer_class(orders, many=True)
             return success_response(serializer.data)
 
@@ -161,7 +161,7 @@ class OrderView(generics.GenericAPIView, IsStaffMixin, IsAdminMixin):
     #     tags=["Cart"],
     # )
     def put(self, request, pk):
-        order = get_object_or_404(Cart, pk=pk)
+        order = get_object_or_404(self.queryset, pk=pk)
         serializer = self.serializer_class(order, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -169,7 +169,7 @@ class OrderView(generics.GenericAPIView, IsStaffMixin, IsAdminMixin):
         return error_response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        order = get_object_or_404(Cart, pk=pk)
+        order = get_object_or_404(self.queryset, pk=pk)
         order.delete()
         return no_content_response()
 
