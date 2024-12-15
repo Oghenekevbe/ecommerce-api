@@ -1,8 +1,10 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from .models import Product, Promotion, Review, Cart, CartItem, BillingAddress, OrderStatus
 from storeSellers.models import Seller
 from storeAdmin.serializers import SellerSerializer
 from django.contrib.auth import get_user_model
+
 
 User = get_user_model()
 
@@ -35,6 +37,13 @@ class ProductSerializer(serializers.ModelSerializer):
             "created_at", "updated_at", "stock_status", "discounted_price", "seller",
             "promo", "created_by", "updated_by"
         ]
+        def validate_image(self, value):
+            if value.size > 2 * 1024 * 1024:  # 2MB max size
+                raise ValidationError("Image file size exceeds 2MB.")
+            if not value.name.endswith(('jpg', 'jpeg', 'png')):
+                raise ValidationError("Unsupported file format. Use jpg, jpeg, or png.")
+            return value
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

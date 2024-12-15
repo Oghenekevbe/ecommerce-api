@@ -5,6 +5,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 import uuid
 from storeSellers.models import Seller
+from cloudinary.models import CloudinaryField
 
 User = get_user_model()
 
@@ -13,28 +14,15 @@ User = get_user_model()
 
 class Product(models.Model):
 
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        related_name="%(class)s_created",
-        null=True,
-        blank=True,
-    )
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="%(class)s_created", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    updated_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        related_name="%(class)s_updated",
-        null=True,
-        blank=True,
-    )
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="%(class)s_updated", null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     category = models.ForeignKey("Category", on_delete=models.CASCADE)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    image = models.ImageField(upload_to="product_images/", blank=True, null=True, default = 'static/default_image.PNG')
+    image = CloudinaryField('image', null=True)
     is_available = models.BooleanField(default=True)
     discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, default= 'NGN', null=True)
