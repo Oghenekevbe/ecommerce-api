@@ -45,6 +45,19 @@ class ProductSerializer(serializers.ModelSerializer):
             return value
 
 
+class ProductListSerializer(serializers.ModelSerializer):
+    discounted_price = serializers.ReadOnlyField()
+    stock_status = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Product
+        fields = [
+            "id", "name", "category", "price", "discount_percentage",
+            "discounted_price", "promo", "image", "is_available",
+            "stock_status", "sku", "seller"
+        ]
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

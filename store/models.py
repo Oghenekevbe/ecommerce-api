@@ -20,10 +20,10 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    category = models.ForeignKey("Category", on_delete=models.CASCADE)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    category = models.ForeignKey("Category", on_delete=models.CASCADE, db_index=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, db_index=True)
     image = CloudinaryField('image', null=True)
-    is_available = models.BooleanField(default=True)
+    is_available = models.BooleanField(default=True, db_index=True)
     discount_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, default= 'NGN', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -78,6 +78,12 @@ class Product(models.Model):
             return "Low Stock - Time to Order"
         else:
             return "Above Restock Threshold - Still Good"
+        
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["category", "is_available"])
+        ]
 
     def __str__(self):
         return self.name

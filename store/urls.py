@@ -20,6 +20,9 @@ urlpatterns = [
     path("products/", ProductView.as_view(), name="products"),
     path("products/<int:pk>/", ProductView.as_view(), name="product-detail"),
     path("search/", ProductSearch.as_view(), name="search"),
+    #e.g http://localhost:8000/api/store/search/?query_type=category&query_value=pets
+    #e.g2 http://localhost:8000/api/store/search/?query_type=category&query_value=pets&page=2
+
 
 
     # PRODUCT REVIEW ENDPOINTS

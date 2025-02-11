@@ -1,15 +1,27 @@
 from services.service_responses import *
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, mixins
+from rest_framework.generics import ListAPIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import Product, Review, BillingAddress, Cart, CartItem
-from .serializers import ProductSerializer, ReviewSerializer, BillingAddressSerializer, CartItemSerializer, CartSerializer
+from .serializers import ProductSerializer, ReviewSerializer, BillingAddressSerializer, CartItemSerializer, CartSerializer, ProductListSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import status
+from rest_framework.exceptions import NotFound
+
+#for optimization
+from django.contrib.postgres.search import SearchVector
+from django.db.models.functions import Lower 
+
+
 
 User = get_user_model()
+
+
+
+
 
 #PRODUCT SEARCH, VIEW AND REVIEW
 
@@ -20,24 +32,49 @@ class ProductSearch(generics.GenericAPIView):
         query_type = request.GET.get("query_type")
         query_value = request.GET.get("query_value")
 
-        if query_type or query_value:
+        if query_type and query_value:
             if query_type == "product":
-                products = Product.objects.filter(name__icontains=query_value)
+                products = Product.objects.annotate(search = SearchVector("name")).filter(search=query_value) # Faster than icontains
+
             elif query_type == "category":
-                products = Product.objects.filter(category__name__icontains=query_value)
+                products = Product.objects.filter(
+                    category__name__icontains=query_value
+                ).select_related("category").annotate(
+                    lower_name=Lower("category__name")
+                ).order_by("lower_name")  # Optimized with trigram indexes
+
+            elif query_type == "availability":
+                products = Product.objects.filter(is_available=True)  # Indexed field
+
             else:
                 return error_response("Invalid query_type parameter")
 
+            # Paginate the queryset
+            paginator = self.pagination_class()
+            paginated_products = paginator.paginate_queryset(products, request)
+            if paginated_products is not None:
+                serializer = self.serializer_class(paginated_products, many=True)
+                return paginator.get_paginated_response(serializer.data)
+
+            # Fallback if pagination is not applied
             serializer = self.serializer_class(products, many=True)
-            return success_response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         return error_response("Missing or empty query parameters")
 
-class ProductView(generics.GenericAPIView):
-    serializer_class = ProductSerializer
+
+
+class ProductView(ListAPIView):
+    
+    def get_serializer_class(self):
+        # Use get_serializer_class to dynamically choose the appropriate serializer
+        if self.kwargs.get("pk"):
+            return ProductSerializer  # Detailed view
+        return ProductListSerializer  # List view
 
     def get_queryset(self):
-        return Product.objects.all()
+        # Fetch products with related fields
+        return Product.objects.select_related("category", "seller", "promo").all().order_by("name")
 
     @swagger_auto_schema(
         responses={
@@ -50,14 +87,22 @@ class ProductView(generics.GenericAPIView):
     def get(self, request, pk=None):
         if pk:
             # Retrieve and return details of a specific product
-            product = get_object_or_404(self.get_queryset(), pk=pk)
-            serializer = self.serializer_class(instance=product)
-            return success_response(serializer.data)
-        
-        # Retrieve and return all products
-        products = self.get_queryset()
-        serializer = self.serializer_class(instance=products, many=True)
-        return success_response(serializer.data)
+            product = self.get_queryset().filter(pk=pk).first()  # Use `first()` to avoid raising an error
+            if not product:
+                raise NotFound(detail="Product not found")
+            serializer = self.get_serializer_class()(product)  # Use the correct serializer here
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Retrieve and return all products with pagination
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer_class()(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        # If pagination is not applied, return the full queryset
+        serializer = self.get_serializer_class()(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

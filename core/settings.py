@@ -83,7 +83,11 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use email for authentication
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication'
-    ]
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 50
+
+
 }
 
 # Simple JWT settings
@@ -151,27 +155,27 @@ TEMPLATES = [
 WSGI_APPLICATION = "core.wsgi.application"
 
 # Database
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    },
-}
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     },
+# }
 
 # Uncomment and configure the following for PostgreSQL
-# DATABASES = {
-#   'default': {
-#     'ENGINE': 'django.db.backends.postgresql',
-#     'NAME': config('PGDATABASE'),
-#     'USER': config('PGUSER'),
-#     'PASSWORD': config('PGPASSWORD'),
-#     'HOST': config('PGHOST'),
-#     'PORT': config('PGPORT', 5432),
-#     'OPTIONS': {
-#       'sslmode': 'require',
-#     },
-#   },
-# }
+DATABASES = {
+  'default': {
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': config('PGDATABASE'),
+    'USER': config('PGUSER'),
+    'PASSWORD': config('PGPASSWORD'),
+    'HOST': config('PGHOST'),
+    'PORT': config('PGPORT', 5432),
+    'OPTIONS': {
+      'sslmode': 'require',
+    },
+  },
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -214,13 +218,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3boto3Storage'
 
 
-# settings.py
 
-# cloudinary.config( 
-# cloud_name = config("cloud_name"),
-# api_key = config("cloudinary_api_key"),
-# api_secret = config("cloudinary_api_secret")
-# )
+cloudinary.config( 
+cloud_name = config("cloud_name"),
+api_key = config("cloudinary_api_key"),
+api_secret = config("cloudinary_api_secret")
+)
 
 # Email and password reset redirect URLs
 EMAIL_CONFIRM_REDIRECT_BASE_URL = "http://localhost:8000/email/confirm/"
