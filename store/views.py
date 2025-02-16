@@ -10,6 +10,7 @@ from .serializers import ProductSerializer, ReviewSerializer, BillingAddressSeri
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.exceptions import NotFound
+from django.core.cache import cache
 
 #for optimization
 from django.contrib.postgres.search import SearchVector
@@ -32,9 +33,20 @@ class ProductSearch(generics.GenericAPIView):
         query_type = request.GET.get("query_type")
         query_value = request.GET.get("query_value")
 
-        if query_type and query_value:
+        if not query_type or not query_value:
+            return error_response("Missing or empty query parameters")
+
+        cache_key = f"search_{query_type}_{query_value}"
+        cached_products = cache.get(cache_key)
+
+        if cached_products:
+            print("Fetching search results from cache...")
+            products = cached_products
+        else:
+            print("Fetching search results from database...")
+
             if query_type == "product":
-                products = Product.objects.annotate(search = SearchVector("name")).filter(search=query_value) # Faster than icontains
+                products = Product.objects.annotate(search=SearchVector("name")).filter(search=query_value)
 
             elif query_type == "category":
                 products = Product.objects.filter(
@@ -49,31 +61,29 @@ class ProductSearch(generics.GenericAPIView):
             else:
                 return error_response("Invalid query_type parameter")
 
-            # Paginate the queryset
-            paginator = self.pagination_class()
-            paginated_products = paginator.paginate_queryset(products, request)
-            if paginated_products is not None:
-                serializer = self.serializer_class(paginated_products, many=True)
-                return paginator.get_paginated_response(serializer.data)
+            cache.set(cache_key, products, timeout=300)  # Cache for 5 minutes
 
-            # Fallback if pagination is not applied
-            serializer = self.serializer_class(products, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        # Paginate the queryset
+        paginator = self.pagination_class()
+        paginated_products = paginator.paginate_queryset(products, request)
 
-        return error_response("Missing or empty query parameters")
+        if paginated_products is not None:
+            serializer = self.serializer_class(paginated_products, many=True)
+            return paginator.get_paginated_response(serializer.data)
 
-
+        # Fallback if pagination is not applied
+        serializer = self.serializer_class(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ProductView(ListAPIView):
+    print("cache class: ", cache.__class__)
     
     def get_serializer_class(self):
-        # Use get_serializer_class to dynamically choose the appropriate serializer
         if self.kwargs.get("pk"):
             return ProductSerializer  # Detailed view
         return ProductListSerializer  # List view
 
     def get_queryset(self):
-        # Fetch products with related fields
         return Product.objects.select_related("category", "seller", "promo").all().order_by("name")
 
     @swagger_auto_schema(
@@ -86,24 +96,35 @@ class ProductView(ListAPIView):
     )
     def get(self, request, pk=None):
         if pk:
-            # Retrieve and return details of a specific product
-            product = self.get_queryset().filter(pk=pk).first()  # Use `first()` to avoid raising an error
-            if not product:
-                raise NotFound(detail="Product not found")
-            serializer = self.get_serializer_class()(product)  # Use the correct serializer here
+            cache_key = f"product_{pk}"
+            product = cache.get(cache_key)
+            
+            if product:
+                print("Fetching product from cache...")
+            else:
+                print("Fetching product from database...")
+                product = get_object_or_404(self.get_queryset(), pk=pk)
+                cache.set(cache_key, product, timeout=300)  # Cache for 5 minutes
+            
+            serializer = self.get_serializer_class()(product)
             return Response(serializer.data, status=status.HTTP_200_OK)
-
-        # Retrieve and return all products with pagination
-        queryset = self.get_queryset()
+        
+        cache_key = "all_products"
+        queryset = cache.get(cache_key)
+        if queryset:
+            print("Fetching all products from cache...")
+        else:
+            print("Fetching all products from database...")
+            queryset = self.get_queryset()
+            cache.set(cache_key, queryset, timeout=300)  # Cache for 5 minutes
+        
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer_class()(page, many=True)
             return self.get_paginated_response(serializer.data)
-
-        # If pagination is not applied, return the full queryset
+        
         serializer = self.get_serializer_class()(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 class ReviewView(generics.GenericAPIView):
@@ -241,7 +262,10 @@ class CartView(generics.GenericAPIView):
 class CartItemView(generics.GenericAPIView):
     serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticated]
-    queryset = CartItem.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        return CartItem.objects.filter(cart__user=user)
 
     @swagger_auto_schema(
         tags=["Store"],
@@ -250,15 +274,14 @@ class CartItemView(generics.GenericAPIView):
         responses={status.HTTP_200_OK: CartItemSerializer(many=True)},
     )
     def get(self, request, pk=None):
-        user = request.user
         if pk is not None:
             # Retrieve a specific cart item
-            cart_item = get_object_or_404(CartItem, pk=pk)
+            cart_item = self.get_object()
             serializer = self.serializer_class(cart_item)
             return success_response(serializer.data)
         else:
             # Retrieve all cart items for the user
-            order, created = Cart.objects.get_or_create(user=user, is_active=True)
+            order, created = Cart.objects.get_or_create(user=request.user, is_active=True)
             cart_items = order.cart_items.all()
             serializer = self.serializer_class(cart_items, many=True)
             return success_response(serializer.data)
@@ -277,7 +300,12 @@ class CartItemView(generics.GenericAPIView):
         user = request.user
         order, created = Cart.objects.get_or_create(user=user, is_active=True)
         serializer = self.serializer_class(data=request.data)
+        
         if serializer.is_valid():
+            product = serializer.validated_data.get("product")
+            if product.seller == user:
+                return error_response("You cannot add your own product to the cart.", status=status.HTTP_400_BAD_REQUEST)
+            
             item = serializer.save(cart=order)
             return created_response(CartItemSerializer(item).data)
         return error_response(serializer.errors)
@@ -293,7 +321,7 @@ class CartItemView(generics.GenericAPIView):
         },
     )
     def put(self, request, pk):
-        cart_item = get_object_or_404(CartItem, pk=pk)
+        cart_item = self.get_object()
         serializer = self.serializer_class(cart_item, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -309,10 +337,9 @@ class CartItemView(generics.GenericAPIView):
         },
     )
     def delete(self, request, pk):
-        cart_item = get_object_or_404(CartItem, pk=pk)
+        cart_item = self.get_object()
         cart_item.delete()
-        return no_content_response()
-    
+        return no_content_response()    
 class CartHistory(generics.GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]

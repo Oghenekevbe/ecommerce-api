@@ -87,17 +87,18 @@ class OrderStatusSerializer(serializers.ModelSerializer):
 class CartItemSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source="product.name")
     price = serializers.ReadOnlyField(source="product.price")
-    seller = SellerSerializer(source="product.seller", read_only=True)
     discounted_price = serializers.ReadOnlyField(source="product.discounted_price")
+    seller = SellerSerializer(source="product.seller", read_only=True)
     get_total = serializers.ReadOnlyField()
-    status = OrderStatusSerializer()
 
     class Meta:
         model = CartItem
         fields = [
-            "id", "product", "name", "order", "quantity", "price", "seller",
-            "discounted_price", "get_total", "date_ordered", "status"
+            "id", "order","product", "name",  "quantity", "price", "discounted_price",
+            "seller", "get_total", "date_ordered"
         ]
+        read_only_fields = ["id","order","name", "price", "discounted_price", "seller", "get_total", "date_ordered"]
+
 
 class CartSerializer(serializers.ModelSerializer):
     cart_items = CartItemSerializer(many=True)

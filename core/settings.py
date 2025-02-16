@@ -105,6 +105,28 @@ REST_AUTH = {
     'JWT_AUTH_HTTPONLY': False,  # Controls whether the JWT token is accessible via JavaScript
 }
 
+
+
+#REDIS
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": config("LOCATION"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": config("redis_server_password"),  # Password specified again for clarity or specific requirements
+        }
+    }
+}
+
+
+# Optional: If you want to use Redis for session storage
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
+
+
+
 # Email settings
 EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
@@ -116,9 +138,7 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 # Paystack settings
 PAYSTACK_KEY = config("PAYSTACK_KEY")
 
-# PayPal settings
-PAYPAL_Client_ID = config('PAYPAL_Client_ID')
-PAYPAL_SECRET_KEY = config('PAYPAL_SECRET_KEY')
+
 
 # Middleware
 MIDDLEWARE = [

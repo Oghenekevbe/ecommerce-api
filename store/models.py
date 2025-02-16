@@ -160,6 +160,14 @@ class BillingAddress(models.Model):
             return "No Billing Address"
 
 
+class OrderStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    PROCESSING = "PROCESSING", "Processing"
+    SHIPPED = "SHIPPED", "Shipped"
+    DELIVERED = "DELIVERED", "Delivered"
+    RETURNED = "RETURNED", "Returned"
+    CANCELED = "CANCELED", "Canceled"
+    COMPLETED = "COMPLETED", "Completed"
 
 
 
@@ -168,7 +176,7 @@ class Cart(models.Model):
     order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     date_ordered = models.DateTimeField(auto_now_add=True)
     address = models.ForeignKey(BillingAddress, related_name="billing_address", on_delete=models.CASCADE, null=True, blank=True)
-    status = models.ForeignKey('OrderStatus', on_delete=models.SET_NULL, null=True, related_name='cart_status')
+    status = models.CharField(max_length=20,choices=OrderStatus.choices,default=OrderStatus.PENDING)    
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -192,7 +200,6 @@ class CartItem(models.Model):
     order = models.ForeignKey(Cart, related_name="cart_items", on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     date_ordered = models.DateTimeField(auto_now_add=True)
-    status = models.ForeignKey('OrderStatus', on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         if self.product:
