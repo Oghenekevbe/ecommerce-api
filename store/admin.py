@@ -23,7 +23,7 @@ class CartAdmin(admin.ModelAdmin):
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ("product", "order", "quantity", "date_ordered", "get_total")
+    list_display = ("id","product", "order", "quantity", "date_ordered", "get_total")
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):

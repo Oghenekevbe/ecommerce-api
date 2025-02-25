@@ -1,21 +1,32 @@
-from services.service_responses import *
-from django.shortcuts import get_object_or_404 
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics, permissions, mixins
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.db.models.functions import Lower
+
+# Django REST Framework imports
+from rest_framework import generics, mixins, permissions, status
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
+
+# DRF-YASG (Swagger) imports
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .models import Product, Review, BillingAddress, Cart, CartItem
-from .serializers import ProductSerializer, ReviewSerializer, BillingAddressSerializer, CartItemSerializer, CartSerializer, ProductListSerializer
-from django.contrib.auth import get_user_model
-from rest_framework import status
-from rest_framework.exceptions import NotFound
-from django.core.cache import cache
 
-#for optimization
+# PostgreSQL-specific optimization
 from django.contrib.postgres.search import SearchVector
-from django.db.models.functions import Lower 
 
+# Local application imports
+from .models import Product, Review, BillingAddress, Cart, CartItem
+from .serializers import (
+    ProductSerializer, ReviewSerializer, BillingAddressSerializer, 
+    CartItemSerializer, CartSerializer, ProductListSerializer
+)
+from services.service_responses import (
+    success_response, created_response, error_response, 
+    accepted_response, no_content_response
+)
 
 
 User = get_user_model()
@@ -230,17 +241,23 @@ class CartView(generics.GenericAPIView):
         operation_summary="Get the cart and all the items in it",
     )
     def get(self, request):
-        user = request.user
-        order, created = Cart.objects.get_or_create(user=user, is_active=True)
-        serializer = self.serializer_class(order)
-        return success_response(serializer.data)
+        cache_key = f"cart_{request.user.id}" #it has to be unique to all users
+        cached_cart = cache.get(cache_key)
+        if cached_cart:
+            print('fetching cached cart')
+            order = cached_cart
+        else:
+            user = request.user
+            order, created = Cart.objects.get_or_create(user=user, is_active=True)
+            serializer = self.serializer_class(order)
+            cache.set(cache_key, serializer.data, timeout=300)
+            return success_response(serializer.data)
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "key": openapi.Schema(type=openapi.TYPE_STRING),
-                "value": openapi.Schema(type=openapi.TYPE_STRING),
+                "address": openapi.Schema(type=openapi.TYPE_STRING),
             },
         ),
         responses={
@@ -251,12 +268,16 @@ class CartView(generics.GenericAPIView):
         operation_summary="Update the cart address",
     )
     def put(self, request):
+        cache_key = f"cart_{request.user.id}" 
         user = request.user
-        order = get_object_or_404(Cart, user=user)
+        order = get_object_or_404(Cart, user=user, is_active=True)  # Ensure we update only the active cart
         serializer = self.serializer_class(order, data=request.data, partial=True)
+        
         if serializer.is_valid():
             serializer.save()
+            cache.set(cache_key, serializer.data, timeout=300)
             return accepted_response(serializer.data)
+        
         return error_response(serializer.errors)
 
 class CartItemView(generics.GenericAPIView):
@@ -264,8 +285,9 @@ class CartItemView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """Restrict queryset to only the cart items of the authenticated user."""
         user = self.request.user
-        return CartItem.objects.filter(cart__user=user)
+        return CartItem.objects.filter(order__user=user)
 
     @swagger_auto_schema(
         tags=["Store"],
@@ -274,17 +296,19 @@ class CartItemView(generics.GenericAPIView):
         responses={status.HTTP_200_OK: CartItemSerializer(many=True)},
     )
     def get(self, request, pk=None):
+        user = request.user
+
         if pk is not None:
             # Retrieve a specific cart item
-            cart_item = self.get_object()
+            cart_item = get_object_or_404(CartItem, id=pk, order__user=user)
             serializer = self.serializer_class(cart_item)
             return success_response(serializer.data)
-        else:
-            # Retrieve all cart items for the user
-            order, created = Cart.objects.get_or_create(user=request.user, is_active=True)
-            cart_items = order.cart_items.all()
-            serializer = self.serializer_class(cart_items, many=True)
-            return success_response(serializer.data)
+
+        # Retrieve all cart items for the user
+        order, created = Cart.objects.get_or_create(user=user, is_active=True)
+        cart_items = order.cart_items.all()
+        serializer = self.serializer_class(cart_items, many=True)
+        return success_response(serializer.data)
 
     @swagger_auto_schema(
         tags=["Store"],
@@ -297,17 +321,12 @@ class CartItemView(generics.GenericAPIView):
         },
     )
     def post(self, request):
-        user = request.user
-        order, created = Cart.objects.get_or_create(user=user, is_active=True)
-        serializer = self.serializer_class(data=request.data)
-        
+        serializer = self.serializer_class(data=request.data, context={"request": request})
+
         if serializer.is_valid():
-            product = serializer.validated_data.get("product")
-            if product.seller == user:
-                return error_response("You cannot add your own product to the cart.", status=status.HTTP_400_BAD_REQUEST)
-            
-            item = serializer.save(cart=order)
-            return created_response(CartItemSerializer(item).data)
+            cart_item = serializer.save()  # The serializer's `create()` method will attach the cart
+            return created_response(CartItemSerializer(cart_item).data)
+
         return error_response(serializer.errors)
 
     @swagger_auto_schema(
@@ -321,13 +340,21 @@ class CartItemView(generics.GenericAPIView):
         },
     )
     def put(self, request, pk):
-        cart_item = self.get_object()
-        serializer = self.serializer_class(cart_item, data=request.data, partial=True)
+        user = request.user
+        cart_item = get_object_or_404(CartItem, id=pk, order__user=user)  # Ensure the item belongs to the user
+        data = request.data
+        serializer = self.serializer_class(cart_item, data=data, partial=True)
+
         if serializer.is_valid():
+            seller = cart_item.product.seller  # Get seller directly from the related product
+            
+            if user == seller.user:  # Ensure you're comparing with seller's user
+                return error_response("You cannot transact with your own product")
+            
             serializer.save()
             return accepted_response(serializer.data)
-        return error_response(serializer.errors)
 
+        return error_response(serializer.errors)
     @swagger_auto_schema(
         tags=["Store"],
         operation_summary="Delete a specific cart item",
@@ -337,9 +364,16 @@ class CartItemView(generics.GenericAPIView):
         },
     )
     def delete(self, request, pk):
-        cart_item = self.get_object()
+        user = request.user
+        cart_item = get_object_or_404(CartItem, id=pk, order__user=user)  # Restrict deletion to user's own cart
         cart_item.delete()
-        return no_content_response()    
+        return no_content_response()
+
+
+
+
+
+
 class CartHistory(generics.GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]

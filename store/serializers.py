@@ -94,11 +94,25 @@ class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
         fields = [
-            "id", "order","product", "name",  "quantity", "price", "discounted_price",
+            "id", "order", "product", "name", "quantity", "price", "discounted_price",
             "seller", "get_total", "date_ordered"
         ]
-        read_only_fields = ["id","order","name", "price", "discounted_price", "seller", "get_total", "date_ordered"]
+        read_only_fields = ["id", "name", "order","price", "discounted_price", "seller", "get_total", "date_ordered"]
 
+    def create(self, validated_data):
+        """ Ensure the item is added to the user's active cart automatically. """
+        user = self.context["request"].user
+        order, created = Cart.objects.get_or_create(user=user, is_active=True)
+
+        # Prevent users from adding their own product
+        product = validated_data["product"]
+        if product.seller.user == user:
+            raise serializers.ValidationError("You cannot add your own product to the cart.")
+
+        # Add order reference to validated data
+        validated_data["order"] = order
+
+        return super().create(validated_data)
 
 class CartSerializer(serializers.ModelSerializer):
     cart_items = CartItemSerializer(many=True)
