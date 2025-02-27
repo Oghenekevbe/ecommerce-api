@@ -35,3 +35,8 @@ settings_local.py
 todo.txt
 venv/pyvenv.cfg
 venv/pyvenv.cfg
+
+
+#static files
+/staticfiles/
+
