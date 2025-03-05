@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, BillingAddress, Cart, CartItem, Review, Promotion, OrderStatus
+from .models import Product, Category, BillingAddress, Cart, CartItem, Review, Promotion
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -20,6 +20,7 @@ class BillingAddressAdmin(admin.ModelAdmin):
 class CartAdmin(admin.ModelAdmin):
     list_display = ("user", "address", "date_ordered", "status", "is_active", "order_number", "cart_total", "cart_item_count")
     ordering = ("-date_ordered",)
+    
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
@@ -35,4 +36,3 @@ class ReviewAdmin(admin.ModelAdmin):
 class PromotionAdmin(admin.ModelAdmin):
     list_display = ("promo_name", "discount_percentage", "start_date", "end_date", "description")
 
-admin.site.register(OrderStatus)

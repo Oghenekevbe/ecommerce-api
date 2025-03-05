@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from .models import Product, Promotion, Review, Cart, CartItem, BillingAddress, OrderStatus
+from .models import Product, Promotion, Review, Cart, CartItem, BillingAddress
 from storeSellers.models import Seller
 from storeAdmin.serializers import SellerSerializer
 from django.contrib.auth import get_user_model
@@ -76,13 +76,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         model = Promotion
         fields = "__all__"
 
-class OrderStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrderStatus
-        fields = [
-            "completed", "delivered", "returned", "confirmed", "shipped",
-            "processing", "canceled"
-        ]
+
 
 class CartItemSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source="product.name")
@@ -116,14 +110,10 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 class CartSerializer(serializers.ModelSerializer):
     cart_items = CartItemSerializer(many=True)
-    status = OrderStatusSerializer()
 
     class Meta:
         model = Cart
-        fields = [
-            "user", "address", "date_ordered", "status", "order_number",
-            "cart_items", "cart_item_count", "cart_total"
-        ]
+        fields = "__all__"
         read_only_fields = [
-            "user", "date_ordered", "order_number", "cart_items", "cart_total"
+            "user", "date_ordered", "order_number", "cart_items", "cart_total","status"
         ]

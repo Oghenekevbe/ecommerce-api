@@ -12,7 +12,7 @@ from .views import (
     AdminUserBillingAddressesAPIView,
     AdmincartHistory,
     CategoryListCreateView,
-    CategoryRetrieveUpdateDeleteView
+    CategoryRetrieveUpdateDeleteView, CartStatusUpdateView
 )
 
 
@@ -32,4 +32,7 @@ urlpatterns = [
     path("profile/", UserProfileView.as_view(), name="user-profile"),
     path("billing-addresses/", AdminUserBillingAddressesAPIView.as_view(), name="admin-user-billing-addresses"),
     path("order_history/<str:pk>/", AdmincartHistory.as_view(), name="admin_order_history"),
+
+    path('cart/<uuid:cart_id>/update-status/', CartStatusUpdateView.as_view(), name='cart-update-status'),
 ]
+

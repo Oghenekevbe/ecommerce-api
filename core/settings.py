@@ -125,6 +125,13 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 
 
+#CELERY
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL')  # Use Redis as broker with redis password
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
 
 
 # Email settings
@@ -132,7 +139,7 @@ EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = config("EMAIL_PORT", cast=int)
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 # Paystack settings
@@ -222,9 +229,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [
-    BASE_DIR / "static", 
-]
+STATICFILES_DIRS = [BASE_DIR / "static", ]
 
 
 
@@ -235,17 +240,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# # AWS S3 settings
-# AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
-# AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
-# AWS_STORAGE_BUCKET_NAME = 'obawebdev'
-# AWS_S3_SIGNATURE_NAME = 's3v4'
-# AWS_S3_REGION_NAME = 'us-east-1'
-# AWS_S3_FILE_OVERWRITE = False
-# AWS_DEFAULT_ACL = None
-# AWS_S3_VERIFY = True
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3boto3Storage'
-
 
 
 cloudinary.config( 
@@ -253,6 +247,7 @@ cloud_name = config("cloud_name"),
 api_key = config("cloudinary_api_key"),
 api_secret = config("cloudinary_api_secret")
 )
+
 
 # Email and password reset redirect URLs
 EMAIL_CONFIRM_REDIRECT_BASE_URL = "http://localhost:8000/email/confirm/"

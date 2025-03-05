@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from store.models import (Product,BillingAddress,Cart,CartItem, Promotion)
 from storeSellers.models import Seller
-from storeAdmin.serializers import SellerSerializer
+from storeAdmin.serializers import SellerSerializer, CartStatusUpdateSerializer
 from store.models import Category
 
 from .permissions import IsStaffMixin, IsAdminMixin
@@ -492,3 +492,110 @@ class AdmincartHistory(APIView, IsStaffMixin):
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
+
+
+
+
+
+class CartStatusUpdateView(generics.GenericAPIView, IsStaffMixin,IsAdminMixin):
+    def patch(self, request, cart_id):
+        try:
+            cart = Cart.objects.get(order_number=cart_id, is_active=True)  # Fetch active cart
+
+            print("cart found ooo ", cart)
+        except Cart.DoesNotExist:
+            return Response(
+                {"error": "Cart not found or not active."},
+                status=status.HTTP_404_NOT_FOUND,   
+            )
+
+        serializer = CartStatusUpdateSerializer(cart, data=request.data, partial=True)
+        if serializer.is_valid():
+            print('it is valid ooo')
+            # Update the status
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

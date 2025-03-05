@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from store.models import Category
+from store.models import Category, Cart
 from storeSellers.models import Seller
 
 from django.contrib.auth import get_user_model
@@ -19,3 +19,10 @@ class SellerSerializer(serializers.ModelSerializer):
         model = Seller
         fields = ["id", "user", "company_name", "address", "phone_number"]
 
+
+
+
+class CartStatusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['status']

@@ -160,23 +160,26 @@ class BillingAddress(models.Model):
             return "No Billing Address"
 
 
-class OrderStatus(models.TextChoices):
-    PENDING = "PENDING", "Pending"
-    PROCESSING = "PROCESSING", "Processing"
-    SHIPPED = "SHIPPED", "Shipped"
-    DELIVERED = "DELIVERED", "Delivered"
-    RETURNED = "RETURNED", "Returned"
-    CANCELED = "CANCELED", "Canceled"
-    COMPLETED = "COMPLETED", "Completed"
-
-
 
 class Cart(models.Model):
+    # Define OrderStatus choices as a tuple
+    ORDER_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('delivered', 'Delivered'),
+        ('returned', 'Returned'),
+        ('confirmed', 'Confirmed'),
+        ('shipped', 'Shipped'),
+        ('processing', 'Processing'),
+        ('canceled', 'Canceled'),
+    )
+
+    # Fields
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order_number = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     date_ordered = models.DateTimeField(auto_now_add=True)
-    address = models.ForeignKey(BillingAddress, related_name="billing_address", on_delete=models.CASCADE, null=True, blank=True)
-    status = models.CharField(max_length=20,choices=OrderStatus.choices,default=OrderStatus.PENDING)    
+    address = models.ForeignKey('BillingAddress', related_name="billing_address", on_delete=models.CASCADE, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending', null= True)   
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -219,14 +222,3 @@ class CartItem(models.Model):
         return total
 
 
-class OrderStatus(models.Model):
-    completed = models.BooleanField(default=False)
-    delivered = models.BooleanField(default=False)
-    returned = models.BooleanField(default=False)
-    confirmed = models.BooleanField(default=False)
-    shipped = models.BooleanField(default=False)
-    processing = models.BooleanField(default=False)
-    canceled = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.cart.order_number} OrderStatus({self.pk})"
