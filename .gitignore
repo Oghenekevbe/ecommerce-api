@@ -40,3 +40,5 @@ venv/pyvenv.cfg
 #static files
 /staticfiles/
 
+#database
+db.sqlite3

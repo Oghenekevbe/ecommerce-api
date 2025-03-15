@@ -85,7 +85,19 @@ REST_FRAMEWORK = {
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication'
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 50
+    "PAGE_SIZE": 50,
+
+    # 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.AnonRateThrottle',
+    #     'rest_framework.throttling.UserRateThrottle',
+    # ],
+    # 'DEFAULT_THROTTLE_RATES': {
+    #     'anon': '100/hour',  # Limit anonymous users
+    #     'user': '1000/hour',  # Limit authenticated users
+    #     'login': '5/minute',  # Limit login attempts
+    #     'password_reset': '3/hour',  # Limit password reset requests
+    #     'register': '5/hour',  # Limit signups
+    # }
 
 
 }

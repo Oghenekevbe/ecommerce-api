@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models.functions import Lower
+from django.db import transaction
 
 # Django REST Framework imports
 from rest_framework import generics, mixins, permissions, status
@@ -274,7 +275,8 @@ class CartView(generics.GenericAPIView):
         serializer = self.serializer_class(order, data=request.data, partial=True)
         
         if serializer.is_valid():
-            serializer.save()
+            with transaction.atomic():
+                serializer.save()
             cache.set(cache_key, serializer.data, timeout=300)
             return accepted_response(serializer.data)
         
@@ -324,7 +326,8 @@ class CartItemView(generics.GenericAPIView):
         serializer = self.serializer_class(data=request.data, context={"request": request})
 
         if serializer.is_valid():
-            cart_item = serializer.save()  # The serializer's `create()` method will attach the cart
+            with transaction.atomic():
+                cart_item = serializer.save() 
             return created_response(CartItemSerializer(cart_item).data)
 
         return error_response(serializer.errors)
@@ -351,7 +354,8 @@ class CartItemView(generics.GenericAPIView):
             if user == seller.user:  # Ensure you're comparing with seller's user
                 return error_response("You cannot transact with your own product")
             
-            serializer.save()
+            with transaction.atomic():
+                serializer.save()
             return accepted_response(serializer.data)
 
         return error_response(serializer.errors)
